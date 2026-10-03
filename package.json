@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "mysql2": "^3.24.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4"
@@ -24,5 +25,18 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Wikan-dev/UNUS-Website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Wikan-dev/UNUS-Website/issues"
+  },
+  "homepage": "https://github.com/Wikan-dev/UNUS-Website#readme"
 }
