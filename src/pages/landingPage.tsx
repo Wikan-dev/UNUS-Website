@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import type Mahasiswa from '../helper/types.tsx';
+import type { Mahasiswa } from '../helper/types.tsx';
 
 export default function LandingPage() {
   const [mahasiswa, setMahasiswa] = useState<Mahasiswa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Mahasiswa | null>(null);
 
   useEffect(() => {
     const ambilSemua = async () => {
@@ -23,13 +24,17 @@ export default function LandingPage() {
   }, []);
   
   const ambilDetail = async (nim: string) => {
-    const response = await fetch(`/api.php?endpoint=mahasiswa&id=${nim}`);
-    if (!response.ok) throw new Error('Data mahasiswa tidak di temukan');
-    setSelected(await response.json());
+    try {
+      const response = await fetch(`/api.php?endpoint=mahasiswa&id=${nim}`);
+      if (!response.ok) throw new Error('Data mahasiswa tidak di temukan');
+      setSelected(await response.json());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'terjadi kesalahan');
+    }
   };
 
   return (
-    <div>
+    <div className='p-5'>
       {loading && <p>Memuat database</p>}
       {error && <p className='text-red-500'>Error: {error}</p>}
       <table className='border-2 table-auto'>
@@ -42,7 +47,7 @@ export default function LandingPage() {
           <th>Status Akademik</th>
         </tr>
         {mahasiswa.map((m, index) => (
-          <tr key={m.nim} className='[&_td]:border [&_td]:p-2 [&_td]:text-center'>
+          <tr key={m.nim} onClick={() => ambilDetail(m.nim)} className='cursor-pointer [&_td]:border [&_td]:p-2 [&_td]:text-center hover:bg-gray-100'>
             <td>{index + 1}</td>
             <td>{m.nim}</td>
             <td>{m.nama_lengkap}</td>
@@ -52,6 +57,12 @@ export default function LandingPage() {
           </tr>
         ))}
       </table>
+      {selected && (
+        <div className='mt-4 border-2 p-3'>
+          <h2 className='text-lg font-bold'>{selected.nama_lengkap}</h2>
+          <p>{selected.nim} - {selected.program_studi} - Angkatan {selected.angkatan} - {selected.status_akademik}</p>
+        </div>
+      )}
     </div>
   )
 }
