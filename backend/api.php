@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// API BACKEND - sumber data untuk aplikasi React
+// API BACKEND - router utama (Modular Router File)
 // ============================================================
 //
 // CARA MENJALANKAN (terminal terpisah, JALAN DULUAN):
@@ -9,95 +9,53 @@
 // ALUR DATANYA:
 //     Browser (React :5173)  ->  Vite proxy  ->  api.php (:8080)  ->  MySQL
 //
+// ROUTING OTOMATIS:
+//     ?endpoint=mahasiswa  -> muat controllers/mahasiswa.php
+//     ?endpoint=login      -> muat controllers/login.php
+//     Tiap controller wajib punya fungsi handle<Endpoint>($conn, $id)
 // ============================================================
 
+// --- CORS + preflight -------------------------------------------------------
 // CORS: wajib karena file ini diakses dari server lain (port 5173),
 // sedangkan file ini jalan di port 8080. Tanpa ini browser akan memblokir.
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Content-Type: application/json; charset=UTF-8");
 
-// Permintaan OPTIONS = handshake otomatis dari browser sebelum GET.
+// Permintaan OPTIONS = handshake otomatis dari browser sebelum request sebenarnya.
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
-// __DIR__ = folder tempat file ini berada, supaya config.php
-// selalu ditemukan tanpa bergantung pada folder kerja terminal.
+// --- Load config + helper ---------------------------------------------------
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/helpers.php';
 
-// Contoh: /api.php?endpoint=mahasiswa        -> semua data
-//         /api.php?endpoint=mahasiswa&id=123 -> satu data
+// --- Parameter --------------------------------------------------------------
 $endpoint = $_GET['endpoint'] ?? '';
 $id       = $_GET['id'] ?? null;
 
-switch ($endpoint) {
-    case 'mahasiswa':
-        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-            http_response_code(405); // Method Not Allowed
-            echo json_encode(["error" => "Hanya permintaan GET yang didukung"]);
-            exit;
-        }
-
-        if ($id !== null) {
-            getMahasiswaById($conn, $id);   // ambil 1 baris (untuk tombol detail)
-        } else {
-            getAllMahasiswa($conn);         // ambil semua baris (untuk tabel utama)
-        }
-        exit; // PENTING: berhenti di sini, jangan lanjut ke bawah
-
-    default:
-        http_response_code(404);
-        echo json_encode(["error" => "Endpoint tidak dikenal: " . $endpoint]);
-        exit;
+// --- Validasi nama endpoint (anti path traversal) ---------------------------
+if (!preg_match('/^[a-z0-9_]+$/', $endpoint)) {
+    responseJSON(["error" => "Endpoint tidak ditemukan: " . $endpoint], 404);
+    exit;
 }
 
-// ============================================================
-// KUMPULAN FUNGSI
-// ============================================================
+// --- Auto-dispatch controller ------------------------------------------------
+$controller = __DIR__ . '/controllers/' . $endpoint . '.php';
 
-// Mengambil SEMUA data mahasiswa untuk ditampilkan di tabel
-function getAllMahasiswa($conn) {
-    // Nama kolom harus sama persis dengan tabel di database
-    $query  = "SELECT nim, nama_lengkap, program_studi, angkatan, status_akademik
-               FROM mahasiswa
-               ORDER BY nim";
-    $result = $conn->query($query);
-
-    $data = [];
-    while ($row = $result->fetch_assoc()) {
-        $data[] = $row;
-    }
-
-    echo json_encode($data);
+if (!is_file($controller)) {
+    responseJSON(["error" => "Endpoint tidak ditemukan: " . $endpoint], 404);
+    exit;
 }
 
-// Mengambil SATU data mahasiswa berdasarkan NIM
-function getMahasiswaById($conn, $nim) {
-    // (?) berarti nilai diisi nanti oleh program, bukan dibaca langsung dari user.
-    // Ini Prepared Statement, yang melindungi dari SQL Injection.
-    $stmt = $conn->prepare(
-        "SELECT nim, nama_lengkap, program_studi, angkatan, status_akademik
-         FROM mahasiswa
-         WHERE nim = ?"
-    );
+require_once $controller;
 
-    // Pasangkan nilai ke tanda ().
-    // "s" = string, dipakai karena kolom nim bertipe varchar.
-    $stmt->bind_param("s", $nim);
-    $stmt->execute();
-
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 0) {
-        http_response_code(404);
-        echo json_encode(["error" => "Mahasiswa dengan NIM $nim tidak ditemukan"]);
-        return;
-    }
-
-    echo json_encode($result->fetch_assoc());
-
-    $stmt->close();
+$handler = 'handle' . ucfirst($endpoint);
+if (!function_exists($handler)) {
+    responseJSON(["error" => "Konfigurasi endpoint bermasalah"], 500);
+    exit;
 }
-?>
+
+$handler($conn, $id);
