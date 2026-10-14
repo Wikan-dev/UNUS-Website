@@ -5,8 +5,8 @@ const API_BASE = '/api.php';
 export async function loginUser(email: string, password: string): Promise<User> {
   const response = await fetch(`${API_BASE}?endpoint=login`, {
     method: 'POST',
-    heademers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ e, password }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: email, password }),
   });
 
   const data: AuthResponse = await response.json();
@@ -23,7 +23,7 @@ export async function registerUser(email: string, password: string): Promise<Use
   const response = await fetch(`${API_BASE}?endpoint=register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ emai, password }),
+    body: JSON.stringify({ username: email, password }),
   });
 
   const data: AuthResponse = await response.json();
