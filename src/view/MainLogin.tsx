@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser } from '../helper/auth';
 
@@ -11,12 +11,12 @@ export default function MainLogin() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
     if (!email.trim() || !password) {
-      setError('Username dan password wajib diisi');
+      setError('Email dan password wajib diisi');
       return;
     }
 
@@ -52,7 +52,7 @@ export default function MainLogin() {
           <p className='mt-1 text-sm text-gray-500'>
             {isRegister
               ? 'Daftarkan kredensial akademik Anda'
-              : 'Gunakan username dan password terdaftar'}
+              : 'Gunakan email dan password terdaftar'}
           </p>
         </div>
 
@@ -72,8 +72,8 @@ export default function MainLogin() {
             <input
               type='text'
               value={email}
-              onChange={(e:string) => setEmail(e.target.value)}
-              placeholder='contoh: admin'
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              placeholder='contoh: nama@email.com'
               autoComplete='username'
               className='w-full px-4 py-2.5 text-sm text-gray-800 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition'
             />
@@ -86,7 +86,7 @@ export default function MainLogin() {
             <input
               type='password'
               value={password}
-              onChange={(e:string) => setPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               placeholder='••••••••'
               autoComplete={isRegister ? 'new-password' : 'current-password'}
               className='w-full px-4 py-2.5 text-sm text-gray-800 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition'

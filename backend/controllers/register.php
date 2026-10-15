@@ -3,7 +3,7 @@
 // controllers/register.php
 // ============================================================
 // Endpoint: POST /api.php?endpoint=register
-// Body (JSON): { "username": "...", "password": "..." }
+// Body (JSON): { "email": "...", "password": "..." }
 // ============================================================
 
 function handleRegister($conn, $id) {
@@ -20,16 +20,16 @@ function handleRegister($conn, $id) {
         return;
     }
 
-    $username = trim($data['username'] ?? '');
+    $email    = trim($data['email'] ?? '');
     $password = $data['password'] ?? '';
 
-    if ($username === '' || $password === '') {
-        responseJSON(["error" => "Username dan password wajib diisi"], 400);
+    if ($email === '' || $password === '') {
+        responseJSON(["error" => "Email dan password wajib diisi"], 400);
         return;
     }
 
-    if (strlen($username) < 3) {
-        responseJSON(["error" => "Username minimal 3 karakter"], 400);
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        responseJSON(["error" => "Format email tidak valid"], 400);
         return;
     }
 
@@ -38,18 +38,18 @@ function handleRegister($conn, $id) {
         return;
     }
 
-    // Cek apakah username sudah dipakai
-    $checkStmt = $conn->prepare("SELECT id FROM pengguna WHERE username = ?");
+    // Cek apakah email sudah dipakai
+    $checkStmt = $conn->prepare("SELECT id_user FROM users WHERE email = ?");
     if (!$checkStmt) {
         responseJSON(["error" => "Persiapan query gagal: " . $conn->error], 500);
         return;
     }
 
-    $checkStmt->bind_param("s", $username);
+    $checkStmt->bind_param("s", $email);
     $checkStmt->execute();
     $res = $checkStmt->get_result();
     if ($res->num_rows > 0) {
-        responseJSON(["error" => "Username sudah terdaftar"], 409);
+        responseJSON(["error" => "Email sudah terdaftar"], 409);
         $checkStmt->close();
         return;
     }
@@ -58,13 +58,15 @@ function handleRegister($conn, $id) {
     // Hash password dengan algoritma default PHP (Bcrypt/Argon2 tergantung PHP version)
     $hash = password_hash($password, PASSWORD_DEFAULT);
 
-    $stmt = $conn->prepare("INSERT INTO pengguna (username, password) VALUES (?, ?)");
+    $role = 'calon_mahasiswa';
+
+    $stmt = $conn->prepare("INSERT INTO users (email, password, role) VALUES (?, ?, ?)");
     if (!$stmt) {
         responseJSON(["error" => "Persiapan simpan gagal: " . $conn->error], 500);
         return;
     }
 
-    $stmt->bind_param("ss", $username, $hash);
+    $stmt->bind_param("sss", $email, $hash, $role);
 
     if (!$stmt->execute()) {
         responseJSON(["error" => "Gagal mendaftarkan pengguna: " . $stmt->error], 500);
@@ -78,8 +80,9 @@ function handleRegister($conn, $id) {
     responseJSON([
         "message" => "Registrasi berhasil",
         "user" => [
-            "id" => (int)$newId,
-            "username" => $username,
+            "id"    => (int)$newId,
+            "email" => $email,
+            "role"  => $role,
         ],
     ], 201);
 }

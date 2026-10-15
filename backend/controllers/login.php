@@ -3,7 +3,7 @@
 // controllers/login.php  (BARU)
 // ============================================================
 // Endpoint: POST ?endpoint=login
-//   Body (JSON): { "username": "...", "password": "..." }
+//   Body (JSON): { "email": "...", "password": "..." }
 //
 // Baca input via php://input, validasi, cari user dengan prepared
 // statement, lalu verifikasi password_hash dengan password_verify.
@@ -25,19 +25,19 @@ function handleLogin($conn, $id) {
         return;
     }
 
-    $username = $data['username'] ?? null;
+    $email = $data['email'] ?? null;
     $password = $data['password'] ?? null;
 
-    if (!$username || !$password) {
+    if (!$email || !$password) {
         responseJSON(["error" => "Username dan password wajib diisi"], 400);
         return;
     }
 
     // --- Cari user di database (prepared statement) -------------------------
     $stmt = $conn->prepare(
-        "SELECT id, username, password
-         FROM pengguna
-         WHERE username = ?"
+        "SELECT id_user, email, password, role
+         FROM users
+         WHERE email = ?"
     );
 
     if (!$stmt) {
@@ -45,7 +45,7 @@ function handleLogin($conn, $id) {
         return;
     }
 
-    $stmt->bind_param("s", $username);
+    $stmt->bind_param("s", $email);
     $stmt->execute();
 
     $result = $stmt->get_result();
@@ -56,7 +56,7 @@ function handleLogin($conn, $id) {
     if (!$user || !password_verify($password, $user['password'])) {
         // Sengaja tidak bedakan "username salah" vs "password salah"
         // untuk mencegah user enumeration.
-        responseJSON(["error" => "Username atau password salah"], 401);
+        responseJSON(["error" => "Email atau password salah"], 401);
         return;
     }
 
@@ -64,8 +64,9 @@ function handleLogin($conn, $id) {
     responseJSON([
         "message" => "Login sukses",
         "user" => [
-            "id"       => (int)$user['id'],
-            "username" => $user['username'],
+            "id"    => (int)$user['id_user'],
+            "email" => $user['email'],
+            "role"  => $user['role'],
         ],
     ], 200);
 }

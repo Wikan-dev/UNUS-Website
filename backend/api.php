@@ -58,4 +58,11 @@ if (!function_exists($handler)) {
     exit;
 }
 
-$handler($conn, $id);
+// Tangkap semua exception (mis. mysqli_sql_exception di PHP 8) agar
+// selalu membalas JSON, bukan body kosong yang membuat client error
+// saat melakukan JSON.parse.
+try {
+    $handler($conn, $id);
+} catch (Throwable $e) {
+    responseJSON(["error" => "Terjadi kesalahan server: " . $e->getMessage()], 500);
+}
