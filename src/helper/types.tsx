@@ -17,3 +17,13 @@ export type AuthResponse = {
   user?: User;
   error?: string;
 };
+
+export type DaftarCalonMahasiswaProps = {
+  noPendaftaran: string;
+  namaPendaftaran: string;
+  asalSekolah: string;
+  kkImg: string;
+  ijazahImg: File | string;
+  statusDokumen: File | string;
+}
+

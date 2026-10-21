@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import type { Mahasiswa } from '../helper/types.tsx';
+import { useNavigate } from 'react-router-dom';
 
 export default function LandingPage() {
   const [mahasiswa, setMahasiswa] = useState<Mahasiswa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Mahasiswa | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const ambilSemua = async () => {
@@ -63,6 +65,10 @@ export default function LandingPage() {
           <p>{selected.nim} - {selected.program_studi} - Angkatan {selected.angkatan} - {selected.status_akademik}</p>
         </div>
       )}
+
+      <div>
+        <h1 onClick={() => navigate('/DaftarCalonMahasiswa')} className='cursor-pointer' >Daftar siswa</h1>
+      </div>
     </div>
   )
 }
