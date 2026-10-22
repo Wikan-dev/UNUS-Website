@@ -25,6 +25,7 @@ export default function CalonMahasiswa() {
         }}
       >
         <input
+          readOnly
           placeholder='no. pendaftaran'
           value={noPendaftaran}
           onChange={(e) => setNoPendaftaran(e.target.value)}

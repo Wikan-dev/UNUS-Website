@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getCurrentUser } from '../helper/auth';
 
 interface CalonMahasiswaState {
   noPendaftaran: string;
@@ -30,7 +31,7 @@ export const useCalonMahasiswaStore = create<CalonMahasiswaState>((set, get) => 
   noPendaftaran: '',
   namaPendaftar: '',
   asalSekolah: '',
-  statusDokumen: 'Menunggu',
+  statusDokumen: 'Menunggu Validasi',
   ijazahFile: null,
   kkFile: null,
 
@@ -53,7 +54,7 @@ export const useCalonMahasiswaStore = create<CalonMahasiswaState>((set, get) => 
       noPendaftaran: '',
       namaPendaftar: '',
       asalSekolah: '',
-      statusDokumen: 'Menunggu',
+      statusDokumen: 'Menunggu Validasi',
       ijazahFile: null,
       kkFile: null,
       loading: false,
@@ -76,14 +77,23 @@ export const useCalonMahasiswaStore = create<CalonMahasiswaState>((set, get) => 
       return;
     }
 
+    // Tabel calon_mahasiswa punya Foreign Key id_user -> users.
+    // id_user diambil dari hasil login yang disimpan auth.ts di localStorage.
+    const user = getCurrentUser();
+    if (!user) {
+      set({ error: 'silakan login dulu sebelum mengisi pendaftaran.' });
+      return;
+    }
+
     set({ loading: true });
 
     try {
       const formData = new FormData();
+      formData.append('id_user', String(user.id));
       formData.append('no_pendaftaran', noPendaftaran.trim());
       formData.append('nama_pendaftar', namaPendaftar.trim());
       formData.append('asal_sekolah', asalSekolah.trim());
-      formData.append('status_dokumen', statusDokumen.trim() || 'Menunggu');
+      formData.append('status_dokumen', statusDokumen.trim() || 'Menunggu Validasi');
       formData.append('ijazah', ijazahFile);
       formData.append('kk', kkFile);
 

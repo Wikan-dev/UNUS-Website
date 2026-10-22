@@ -52,7 +52,14 @@ if (!is_file($controller)) {
 
 require_once $controller;
 
-$handler = 'handle' . ucfirst($endpoint);
+// Nama handler = 'handle' + nama endpoint dalam CamelCase.
+// ucfirst() saja TIDAK cukup: endpoint 'calon_mahasiswa' akan jadi
+// 'handleCalon_mahasiswa' (ada underscore) padahal fungsi runtime-nya
+// 'handleCalonMahasiswa' -> function_exists() = false -> error 500.
+// Solusi: ganti '_' dengan spasi -> ucwords -> hapus spasi lagi.
+//   mahasiswa      -> handleMahasiswa
+//   calon_mahasiswa -> handleCalonMahasiswa
+$handler = 'handle' . str_replace(' ', '', ucwords(str_replace('_', ' ', $endpoint)));
 if (!function_exists($handler)) {
     responseJSON(["error" => "Konfigurasi endpoint bermasalah"], 500);
     exit;
