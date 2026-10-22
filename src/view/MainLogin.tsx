@@ -32,8 +32,8 @@ export default function MainLogin() {
       } else {
         await loginUser(email.trim(), password);
       }
-      // Berhasil -> alihkan ke landing page / dashboard
-      navigate('/');
+      // Berhasil -> alihkan ke landing page / 22/10/2026shboard
+      navigate('/DashBoardMahasiswa/:IDMahasiswa');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
     } finally {
@@ -146,6 +146,7 @@ export default function MainLogin() {
                 onClick={() => {
                   setIsRegister(true);
                   setError(null);
+                  navigate('/DashBoardMahasiswa/:IDMahasiswa')
                 }}
                 className='font-semibold text-blue-600 hover:underline'
               >

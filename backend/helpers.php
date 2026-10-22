@@ -10,3 +10,7 @@ function responseJSON($data, $code = 200) {
     http_response_code($code);
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
 }
+
+function buatHashProfil(string $nim, string $salt): string {
+  return hash('sha256', $nim . $salt);
+}

@@ -10,6 +10,8 @@ $user = "root";
 $pass = "";
 $db   = "unus";
 
+$hashsalt = 'abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMOPQRSTUVWXYZ1234567890!@#$%^&*()-=[]{}';
+
 $conn = new mysqli($host, $user, $pass, $db);
 
 // Hentikan script dan kirim pesan error dalam format JSON

@@ -9,10 +9,42 @@
 // Hanya mendukung metode GET.
 // ============================================================
 
+function getMahasiswaByHash($conn, string $hashMasuk) {
+  global $hashsalt;
+
+  if (!preg_match('/^[a-f0-9]{64}$/', $hashMasuk)) {
+    responseJSON(["error" => "Profil tidak ditemukan"], 404);
+    return;
+  }
+
+  $stmt = $conn->prepare(
+    "SELECT nim, nama_lengkap, program_studi, angkatan, status_akademik, SHA2(CONCAT(nim, ?), 256) AS hash_profil
+    FROM mahasiswa
+    WHERE SHA2(CONCAT(nim, ?), 256) = ?"
+  );
+  $stmt->bind_param("sss", $hashsalt, $hashsalt, $hashMasuk);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $data = $result->fetch_assoc();
+  $stmt->close();
+
+  if (!$data) {
+    responseJSON(["error" => "Profil tidak ditemukan"], 404);
+    return;
+  }
+
+  responseJSON($data, 200);
+}
+
 function handleMahasiswa($conn, $id) {
     if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
         responseJSON(["error" => "Hanya permintaan GET yang didukung"], 405);
         return;
+    }
+
+    if (isset($_GET['h']) && $_GET['h'] !== '') {
+      getMahasiswaByHash($conn, trim($_GET['h']));
+      return; // berhenti di sini, jangan jatuh ke mode $id / semua data
     }
 
     if ($id !== null && $id !== '') {
@@ -24,11 +56,16 @@ function handleMahasiswa($conn, $id) {
 
 // --- Mengambil SEMUA data mahasiswa -----------------------------------------
 function getAllMahasiswa($conn) {
-    // Nama kolom harus sama persis dengan tabel di database
-    $query  = "SELECT nim, nama_lengkap, program_studi, angkatan, status_akademik
+    global $hashsalt;
+    // ? diganti garam oleh prepared statement — hash ikut terhitung di SQL
+    $query  = "SELECT nim, nama_lengkap, program_studi, angkatan, status_akademik,
+                      SHA2(CONCAT(nim, ?), 256) AS hash_profil
                FROM mahasiswa
                ORDER BY nim";
-    $result = $conn->query($query);
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("s", $hashsalt); //ganti garam oleh php
+    $stmt->execute();
+    $result = $stmt->get_result();
 
     if (!$result) {
         responseJSON(["error" => "Query database gagal: " . $conn->error], 500);
@@ -39,6 +76,7 @@ function getAllMahasiswa($conn) {
     while ($row = $result->fetch_assoc()) {
         $data[] = $row;
     }
+    $stmt->close();
 
     responseJSON($data, 200);
 }

@@ -4,6 +4,7 @@ export type Mahasiswa = {
   program_studi: string;
   angkatan: number;
   status_akademik: string;
+  hash_profil: string;
 };
 
 export type User = {
