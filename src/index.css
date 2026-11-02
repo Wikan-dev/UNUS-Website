@@ -2,6 +2,10 @@
 
 @theme {
   --color-text-1: #FFDCBD;
+  --color-placeholder: #778891;
+  --color-sidebar: #0F2027;
+  --color-role-sidebar: #002147;
+  --color-role-text: #A5C8FF;
 
   --font-inter: 'inter', sans-serif;
   --font-merrie: 'merrie', sans-serif;
