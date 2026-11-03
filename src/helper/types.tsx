@@ -3,8 +3,11 @@ export type Mahasiswa = {
   nama_lengkap: string;
   program_studi: string;
   angkatan: number;
-  status_akademik: string;
+  status_akademik: 'Aktif' | 'Cuti' | 'Lulus' | 'DO' | string;
   hash_profil: string;
+  id_user?: number;
+  dosen_wali_nidn?: string | null;
+  user_email?: string;
 };
 
 export type User = {

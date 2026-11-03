@@ -60,12 +60,6 @@ const mainMenus: MenuItem[] = [
     matchPrefix: true,
     icon: DashboardIcon,
   },
-  {
-    name: "Dashboard Admin",
-    path: "/Login",
-    exact: true,
-    icon: DashboardIcon,
-  },
 ];
 
 export default function MenuSidebar() {
