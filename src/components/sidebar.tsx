@@ -4,16 +4,18 @@ import sidebarLogo from '../assets/svg/Button.svg';
 import arrow from '../assets/svg/arrow.svg';
 import MenuSidebar from './MenuSidebar';
 import { getCurrentUser } from '../helper/auth';
+import { useSessionPath } from '../helper/useSessionPath';
 
 export default function Sidebar() {
   const user = getCurrentUser();
+  const basePath = useSessionPath();
 
   return (
     <aside className='w-80 min-h-screen bg-sidebar px-6 py-6 flex flex-col justify-between shrink-0 shadow-2xl sticky top-0 h-screen overflow-y-auto'>
       <div>
         {/* Brand / Logo */}
         <div className='flex justify-between items-center'>
-          <Link to='/' className='flex flex-row gap-3.5 items-center group cursor-pointer'>
+          <Link to={`${basePath}/Home`} className='flex flex-row gap-3.5 items-center group cursor-pointer'>
             <img
               src={logo}
               className='bg-white w-12 h-12 p-2 rounded-xl group-hover:scale-105 transition-transform'

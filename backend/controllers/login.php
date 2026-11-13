@@ -7,6 +7,7 @@
 //
 // Baca input via php://input, validasi, cari user dengan prepared
 // statement, lalu verifikasi password_hash dengan password_verify.
+// Setelah login sukses, generate session_hash unik dan simpan di DB.
 // ============================================================
 
 function handleLogin($conn, $id) {
@@ -60,13 +61,30 @@ function handleLogin($conn, $id) {
         return;
     }
 
+    // --- Generate session_hash unik untuk sesi ini --------------------------
+    // Hash = SHA-256 dari (random_bytes + user_id + timestamp)
+    // Setiap kali login, hash baru di-generate sehingga unik per sesi.
+    $randomBytes = bin2hex(random_bytes(32));
+    $sessionHash = hash('sha256', $randomBytes . $user['id_user'] . microtime(true));
+
+    // Simpan session_hash ke database
+    $updateStmt = $conn->prepare(
+        "UPDATE users SET session_hash = ? WHERE id_user = ?"
+    );
+    if ($updateStmt) {
+        $updateStmt->bind_param("si", $sessionHash, $user['id_user']);
+        $updateStmt->execute();
+        $updateStmt->close();
+    }
+
     // --- Berhasil ------------------------------------------------------------
     responseJSON([
         "message" => "Login sukses",
         "user" => [
-            "id"    => (int)$user['id_user'],
-            "email" => $user['email'],
-            "role"  => $user['role'],
+            "id"           => (int)$user['id_user'],
+            "email"        => $user['email'],
+            "role"         => $user['role'],
+            "session_hash" => $sessionHash,
         ],
     ], 200);
 }

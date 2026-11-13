@@ -77,12 +77,24 @@ function handleRegister($conn, $id) {
     $newId = $stmt->insert_id;
     $stmt->close();
 
+    // Generate session_hash untuk sesi pertama setelah registrasi
+    $randomBytes = bin2hex(random_bytes(32));
+    $sessionHash = hash('sha256', $randomBytes . $newId . microtime(true));
+
+    $updateStmt = $conn->prepare("UPDATE users SET session_hash = ? WHERE id_user = ?");
+    if ($updateStmt) {
+        $updateStmt->bind_param("si", $sessionHash, $newId);
+        $updateStmt->execute();
+        $updateStmt->close();
+    }
+
     responseJSON([
         "message" => "Registrasi berhasil",
         "user" => [
-            "id"    => (int)$newId,
-            "email" => $email,
-            "role"  => $role,
+            "id"           => (int)$newId,
+            "email"        => $email,
+            "role"         => $role,
+            "session_hash" => $sessionHash,
         ],
     ], 201);
 }

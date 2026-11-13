@@ -27,13 +27,19 @@ export default function MainLogin() {
 
     setLoading(true);
     try {
+      let user;
       if (isRegister) {
-        await registerUser(email.trim(), password);
+        user = await registerUser(email.trim(), password);
       } else {
-        await loginUser(email.trim(), password);
+        user = await loginUser(email.trim(), password);
       }
-      // Berhasil -> alihkan ke dashboard mahasiswa
-      navigate('/DashBoardMahasiswa');
+      // Berhasil -> alihkan ke halaman Home dengan session hash unik
+      if (user.session_hash) {
+        navigate(`/s/${user.session_hash}/Home`);
+      } else {
+        // Fallback jika register (belum ada session_hash)
+        navigate('/Login');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
     } finally {

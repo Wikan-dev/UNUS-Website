@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logoutUser } from '../helper/auth';
+import { useSessionPath } from '../helper/useSessionPath';
 
 function HomeIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -35,7 +36,8 @@ function LogoutIcon({ className = 'w-5 h-5' }: { className?: string }) {
 
 interface MenuItem {
   name: string;
-  path: string;
+  /** Path relatif dari session base (tanpa leading slash session) */
+  relativePath: string;
   exact?: boolean;
   matchPrefix?: boolean;
   icon: (props: { className?: string }) => React.JSX.Element;
@@ -44,19 +46,19 @@ interface MenuItem {
 const mainMenus: MenuItem[] = [
   {
     name: 'Home',
-    path: '/',
+    relativePath: 'Home',
     exact: true,
     icon: HomeIcon,
   },
   {
     name: 'Calon Mahasiswa',
-    path: '/DaftarCalonMahasiswa',
+    relativePath: 'DaftarCalonMahasiswa',
     exact: true,
     icon: CalonMahasiswaIcon,
   },
   {
     name: 'Dashboard Mahasiswa',
-    path: '/DashBoardMahasiswa',
+    relativePath: 'DashBoardMahasiswa',
     matchPrefix: true,
     icon: DashboardIcon,
   },
@@ -66,15 +68,17 @@ export default function MenuSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const user = getCurrentUser();
+  const basePath = useSessionPath();
 
   const isItemActive = (item: MenuItem): boolean => {
+    const fullPath = `${basePath}/${item.relativePath}`;
     if (item.exact) {
-      return location.pathname === item.path;
+      return location.pathname === fullPath;
     }
     if (item.matchPrefix) {
-      return location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+      return location.pathname === fullPath || location.pathname.startsWith(`${fullPath}/`);
     }
-    return location.pathname === item.path;
+    return location.pathname === fullPath;
   };
 
   const handleLogout = () => {
@@ -93,11 +97,12 @@ export default function MenuSidebar() {
       {mainMenus.map((item) => {
         const active = isItemActive(item);
         const Icon = item.icon;
+        const fullPath = `${basePath}/${item.relativePath}`;
 
         return (
           <Link
-            key={item.path}
-            to={item.path}
+            key={item.relativePath}
+            to={fullPath}
             className={`group flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 border-l-4 ${
               active
                 ? 'bg-role-sidebar text-white font-semibold border-role-text shadow-md'

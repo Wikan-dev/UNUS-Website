@@ -45,6 +45,40 @@ export function getCurrentUser(): User | null {
   }
 }
 
+/**
+ * Ambil session_hash dari user yang sedang login.
+ * Return null jika belum login atau tidak ada hash.
+ */
+export function getSessionHash(): string | null {
+  const user = getCurrentUser();
+  return user?.session_hash ?? null;
+}
+
+/**
+ * Verifikasi session_hash ke backend, memastikan masih valid.
+ */
+export async function verifySessionHash(hash: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE}?endpoint=verify_session&hash=${encodeURIComponent(hash)}`);
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data.valid === true;
+  } catch {
+    return false;
+  }
+}
+
 export function logoutUser(): void {
+  const hash = getSessionHash();
+  if (hash) {
+    // Invalidate session_hash di database agar tidak bisa dipakai ulang
+    fetch(`${API_BASE}?endpoint=logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_hash: hash }),
+    }).catch(() => {
+      // Abaikan kegagalan jaringan saat logout
+    });
+  }
   localStorage.removeItem('user');
 }

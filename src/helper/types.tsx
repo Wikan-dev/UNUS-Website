@@ -14,6 +14,7 @@ export type User = {
   id: number;
   email: string;
   role?: string;
+  session_hash?: string;
 };
 
 export type AuthResponse = {

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import type { Mahasiswa } from '../helper/types.tsx';
 import { useNavigate, Link } from 'react-router-dom';
+import { useSessionPath } from '../helper/useSessionPath';
 
 export default function LandingPage() {
   const [mahasiswa, setMahasiswa] = useState<Mahasiswa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const basePath = useSessionPath();
 
   useEffect(() => {
     const ambilSemua = async () => {
@@ -35,7 +37,7 @@ export default function LandingPage() {
         </div>
         <div>
           <button
-            onClick={() => navigate('/DaftarCalonMahasiswa')}
+            onClick={() => navigate(`${basePath}/DaftarCalonMahasiswa`)}
             className='cursor-pointer px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-xl shadow-sm transition'
           >
             + Daftar Calon Mahasiswa
@@ -88,7 +90,7 @@ export default function LandingPage() {
                   </td>
                   <td className='p-4 text-center'>
                     <Link
-                      to={`/DashBoardMahasiswa/${m.hash_profil}`}
+                      to={`${basePath}/DashBoardMahasiswa/${m.hash_profil}`}
                       className='inline-block px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-600 hover:text-white transition'
                     >
                       Lihat Dashboard

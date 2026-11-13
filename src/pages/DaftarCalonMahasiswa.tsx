@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import NoPendaftaran from '../helper/noPendaftaranFunction.tsx';
 import { useCalonMahasiswaStore } from '../store/useCalonMahasiswaStore';
+import { useSessionPath } from '../helper/useSessionPath';
 
 export default function CalonMahasiswa() {
+  const basePath = useSessionPath();
   const {
     noPendaftaran, namaPendaftar, asalSekolah, statusDokumen,
     setNoPendaftaran, setNamaPendaftar, setAsalSekolah, setStatusDokumen,
@@ -26,7 +28,7 @@ export default function CalonMahasiswa() {
           </p>
         </div>
         <Link
-          to='/'
+          to={`${basePath}/Home`}
           className='px-4 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-xl text-sm font-medium transition'
         >
           ← Kembali ke Home
