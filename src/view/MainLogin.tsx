@@ -35,7 +35,7 @@ export default function MainLogin() {
       }
       // Berhasil -> alihkan ke halaman Home dengan session hash unik
       if (user.session_hash) {
-        navigate(`/s/${user.session_hash}/Home`);
+        navigate(`/s/${user.session_hash}/HomePage`);
       } else {
         // Fallback jika register (belum ada session_hash)
         navigate('/Login');

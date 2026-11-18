@@ -5,12 +5,20 @@
 
 import type { Mahasiswa } from './types';
 import type { StudentFormData, FieldChange } from './dashboardTypes';
+import { getAuthHeaders } from './auth';
 
 /**
  * Mengambil daftar seluruh mahasiswa untuk navigasi dropdown cepat
+ * (Hanya admin & dosen yang diizinkan oleh backend)
  */
 export async function fetchAllMahasiswa(): Promise<Mahasiswa[]> {
-  const res = await fetch('/api.php?endpoint=mahasiswa');
+  const res = await fetch('/api.php?endpoint=mahasiswa', {
+    headers: getAuthHeaders(),
+  });
+  if (res.status === 403) {
+    // User tidak punya akses — return array kosong alih-alih error
+    return [];
+  }
   if (!res.ok) {
     throw new Error('Gagal memuat daftar mahasiswa.');
   }
@@ -21,7 +29,12 @@ export async function fetchAllMahasiswa(): Promise<Mahasiswa[]> {
  * Mengambil 1 detail mahasiswa berdasarkan hash profil atau NIM
  */
 export async function fetchMahasiswaDetail(identifier: string): Promise<Mahasiswa> {
-  const res = await fetch(`/api.php?endpoint=mahasiswa&h=${encodeURIComponent(identifier)}`);
+  const res = await fetch(`/api.php?endpoint=mahasiswa&h=${encodeURIComponent(identifier)}`, {
+    headers: getAuthHeaders(),
+  });
+  if (res.status === 403) {
+    throw new Error('Akses ditolak: Anda tidak memiliki hak untuk melihat data mahasiswa ini.');
+  }
   if (res.status === 404) {
     throw new Error('Profil mahasiswa tidak ditemukan di pangkalan data.');
   }
@@ -33,6 +46,7 @@ export async function fetchMahasiswaDetail(identifier: string): Promise<Mahasisw
 
 /**
  * Menyimpan seluruh perubahan data mahasiswa ke server
+ * (Hanya admin yang diizinkan oleh backend)
  */
 export async function updateMahasiswaDetail(
   originalNim: string,
@@ -51,11 +65,14 @@ export async function updateMahasiswaDetail(
 
   const res = await fetch('/api.php?endpoint=mahasiswa', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
   const resData = await res.json();
+  if (res.status === 403) {
+    throw new Error('Akses ditolak: Hanya Administrator yang dapat mengubah data mahasiswa.');
+  }
   if (!res.ok) {
     throw new Error(resData.error || 'Gagal menyimpan perubahan ke basis data.');
   }
@@ -65,13 +82,18 @@ export async function updateMahasiswaDetail(
 
 /**
  * Menghapus data mahasiswa secara permanen dari server
+ * (Hanya admin yang diizinkan oleh backend)
  */
 export async function deleteMahasiswaPermanent(nim: string): Promise<void> {
   const res = await fetch(`/api.php?endpoint=mahasiswa&nim=${encodeURIComponent(nim)}`, {
     method: 'DELETE',
+    headers: getAuthHeaders(),
   });
 
   const resData = await res.json();
+  if (res.status === 403) {
+    throw new Error('Akses ditolak: Hanya Administrator yang dapat menghapus data mahasiswa.');
+  }
   if (!res.ok) {
     throw new Error(resData.error || 'Gagal menghapus data mahasiswa.');
   }

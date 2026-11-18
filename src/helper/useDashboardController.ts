@@ -9,6 +9,7 @@ import type { Mahasiswa } from './types';
 import type { StudentFormData, ModalConfig, FieldChange } from './dashboardTypes';
 import { DEFAULT_YEAR } from './dashboardConstants';
 import { getCurrentUser } from './auth';
+import { getPermissions } from './rbac';
 import {
   fetchAllMahasiswa,
   fetchMahasiswaDetail,
@@ -22,11 +23,10 @@ export function useDashboardController(IDMahasiswa?: string) {
   const navigate = useNavigate();
   const basePath = useSessionPath();
 
-  // Pengguna & Otoritas Akses
+  // Pengguna & Otoritas Akses — menggunakan RBAC, TANPA simulasi admin
   const currentUser = getCurrentUser();
-  const isAdminUser = currentUser?.role === 'admin';
-  const [adminSimulated, setAdminSimulated] = useState<boolean>(false);
-  const hasAdminAccess = Boolean(isAdminUser || adminSimulated);
+  const perms = getPermissions(currentUser?.role);
+  const hasAdminAccess = perms.canEditStudent;
 
   // Data Mahasiswa
   const [mhs, setMhs] = useState<Mahasiswa | null>(null);
@@ -74,15 +74,12 @@ export function useDashboardController(IDMahasiswa?: string) {
     setFormData((prev) => ({ ...prev, ...updated }));
   }, []);
 
-  // Toggle simulasi admin
+  // Toggle admin dihilangkan — menggunakan RBAC murni dari database
   const handleToggleAdmin = useCallback(
-    (active: boolean) => {
-      setAdminSimulated(active);
-      if (!active && isEditing) {
-        setIsEditing(false);
-      }
+    (_active: boolean) => {
+      // No-op: admin access ditentukan oleh role di database, bukan toggle manual
     },
-    [isEditing]
+    []
   );
 
   // Muat daftar seluruh mahasiswa untuk dropdown cepat
@@ -176,13 +173,11 @@ export function useDashboardController(IDMahasiswa?: string) {
         type: 'warning',
         title: 'Hak Akses Dibatasi',
         description:
-          'Hanya Administrator yang memiliki wewenang untuk mengubah data mahasiswa. Silakan aktifkan Mode Administrator terlebih dahulu.',
-        confirmLabel: 'Aktifkan Mode Admin & Lanjutkan',
-        cancelLabel: 'Tutup',
-        confirmButtonClass: 'bg-blue-600 hover:bg-blue-700 text-white',
+          'Hanya Administrator yang memiliki wewenang untuk mengubah data mahasiswa. Hubungi administrator jika Anda memerlukan perubahan data.',
+        confirmLabel: 'Tutup',
+        cancelLabel: '',
+        confirmButtonClass: 'bg-gray-600 hover:bg-gray-700 text-white',
         onConfirm: () => {
-          setAdminSimulated(true);
-          setIsEditing(true);
           closeModal();
         },
       });

@@ -20,22 +20,45 @@ function handleMahasiswa($conn, $id) {
 
     switch ($method) {
         case 'GET':
+            // ============================================================
+            // RBAC: GET data mahasiswa
+            // - Admin & dosen: bisa lihat SEMUA mahasiswa
+            // - Mahasiswa: hanya bisa lihat data DIRI SENDIRI
+            // - Calon mahasiswa: tidak boleh akses data mahasiswa
+            // ============================================================
+            $authUser = getAuthenticatedUser($conn);
+
             if (isset($_GET['h']) && $_GET['h'] !== '') {
                 $paramH = trim($_GET['h']);
                 if (preg_match('/^[a-f0-9]{64}$/', $paramH)) {
-                    getMahasiswaByHash($conn, $paramH);
+                    getMahasiswaByHash($conn, $paramH, $authUser);
                 } else {
-                    getMahasiswaById($conn, $paramH);
+                    getMahasiswaById($conn, $paramH, $authUser);
                 }
             } elseif ($id !== null && $id !== '') {
-                getMahasiswaById($conn, trim($id));
+                getMahasiswaById($conn, trim($id), $authUser);
             } else {
+                // GET semua mahasiswa — hanya admin & dosen
+                if (!$authUser) {
+                    responseJSON(["error" => "Akses ditolak: Anda harus login terlebih dahulu", "code" => "UNAUTHENTICATED"], 401);
+                    return;
+                }
+                if (!in_array($authUser['role'], ['admin', 'dosen'], true)) {
+                    responseJSON([
+                        "error" => "Akses ditolak: Hanya Admin dan Dosen yang dapat melihat seluruh data mahasiswa",
+                        "code" => "FORBIDDEN",
+                        "your_role" => $authUser['role'],
+                    ], 403);
+                    return;
+                }
                 getAllMahasiswa($conn);
             }
             break;
 
         case 'PUT':
         case 'PATCH':
+            // Update data mahasiswa — hanya admin
+            requireRole($conn, ['admin']);
             updateMahasiswa($conn, $id);
             break;
 
@@ -44,13 +67,19 @@ function handleMahasiswa($conn, $id) {
             $raw = file_get_contents('php://input');
             $data = json_decode($raw, true);
             if (is_array($data) && (isset($data['action']) && $data['action'] === 'delete')) {
+                // Delete — hanya admin
+                requireRole($conn, ['admin']);
                 deleteMahasiswa($conn, $data['nim'] ?? $id);
             } else {
+                // Update — hanya admin
+                requireRole($conn, ['admin']);
                 updateMahasiswa($conn, $id);
             }
             break;
 
         case 'DELETE':
+            // Hapus data mahasiswa — hanya admin
+            requireRole($conn, ['admin']);
             $targetNim = $_GET['nim'] ?? $id;
             if (!$targetNim) {
                 $raw = file_get_contents('php://input');
@@ -67,7 +96,7 @@ function handleMahasiswa($conn, $id) {
 }
 
 // --- Mengambil SATU data mahasiswa berdasarkan HASH -------------------------
-function getMahasiswaByHash($conn, string $hashMasuk) {
+function getMahasiswaByHash($conn, string $hashMasuk, ?array $authUser = null) {
     global $hashsalt;
 
     if (!preg_match('/^[a-f0-9]{64}$/', $hashMasuk)) {
@@ -99,11 +128,23 @@ function getMahasiswaByHash($conn, string $hashMasuk) {
         return;
     }
 
+    // RBAC: Mahasiswa hanya bisa lihat data diri sendiri
+    if ($authUser && !in_array($authUser['role'], ['admin', 'dosen'], true)) {
+        // User bukan admin/dosen — cek apakah data ini miliknya
+        if ((int)$data['id_user'] !== (int)$authUser['id_user']) {
+            responseJSON([
+                "error" => "Akses ditolak: Anda hanya dapat melihat data profil Anda sendiri",
+                "code"  => "FORBIDDEN",
+            ], 403);
+            return;
+        }
+    }
+
     responseJSON($data, 200);
 }
 
 // --- Mengambil SATU data mahasiswa berdasarkan NIM --------------------------
-function getMahasiswaById($conn, $nim) {
+function getMahasiswaById($conn, $nim, ?array $authUser = null) {
     global $hashsalt;
 
     $query = "SELECT m.nim, m.id_user, m.nama_lengkap, m.program_studi, m.angkatan, m.status_akademik, m.dosen_wali_nidn,
@@ -128,6 +169,17 @@ function getMahasiswaById($conn, $nim) {
     if (!$data) {
         responseJSON(["error" => "Mahasiswa dengan NIM $nim tidak ditemukan"], 404);
         return;
+    }
+
+    // RBAC: Mahasiswa hanya bisa lihat data diri sendiri
+    if ($authUser && !in_array($authUser['role'], ['admin', 'dosen'], true)) {
+        if ((int)$data['id_user'] !== (int)$authUser['id_user']) {
+            responseJSON([
+                "error" => "Akses ditolak: Anda hanya dapat melihat data profil Anda sendiri",
+                "code"  => "FORBIDDEN",
+            ], 403);
+            return;
+        }
     }
 
     responseJSON($data, 200);

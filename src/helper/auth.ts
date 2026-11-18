@@ -2,6 +2,33 @@ import type { User, AuthResponse } from './types.tsx';
 
 const API_BASE = '/api.php';
 
+/**
+ * Mendapatkan header Authorization dengan session_hash user yang sedang login.
+ * Digunakan oleh semua API call yang butuh autentikasi.
+ */
+export function getAuthHeaders(): Record<string, string> {
+  const user = getCurrentUser();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (user?.session_hash) {
+    headers['Authorization'] = `Bearer ${user.session_hash}`;
+  }
+  return headers;
+}
+
+/**
+ * Mendapatkan header Authorization saja (tanpa Content-Type).
+ * Digunakan untuk request multipart/form-data.
+ */
+export function getAuthHeaderOnly(): Record<string, string> {
+  const user = getCurrentUser();
+  if (user?.session_hash) {
+    return { 'Authorization': `Bearer ${user.session_hash}` };
+  }
+  return {};
+}
+
 export async function loginUser(email: string, password: string): Promise<User> {
   const response = await fetch(`${API_BASE}?endpoint=login`, {
     method: 'POST',

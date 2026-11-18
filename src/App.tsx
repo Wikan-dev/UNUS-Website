@@ -1,13 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import RootLayout from './components/RootLayout.tsx';
 import SessionGuard from './components/SessionGuard.tsx';
+import RoleGuard from './components/RoleGuard.tsx';
 import RootRedirect from './components/RootRedirect.tsx';
 import LandingPage from './pages/landingPage.tsx';
 import Login from './pages/login.tsx';
 import CalonMahasiswa from './pages/DaftarCalonMahasiswa.tsx';
 import DashBoardMahasiswa from './pages/Dashboard.tsx';
-//TODO: haladlfkajdlfkaj
-export default funcition App() {
+import HomePage from './pages/HomePage.tsx'
+
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
@@ -20,15 +22,42 @@ export default funcition App() {
         {/* 
           Semua route yang dilindungi ada di bawah /s/:sessionHash/...
           SessionGuard memverifikasi hash valid sebelum mengizinkan akses.
+          RoleGuard mengecek apakah role user diizinkan untuk halaman tersebut.
         */}
         <Route path='/s/:sessionHash' element={<SessionGuard />}>
           <Route element={<RootLayout />}>
-            {/* Navigasi langsung ke /s/:sessionHash -> redirect ke /s/:sessionHash/Home */}
-            <Route index element={<Navigate to='Home' replace />}/>
-            <Route path='Home' element={<LandingPage />}/>
-            <Route path='DaftarCalonMahasiswa' element={<CalonMahasiswa />}/>
-            <Route path='DashBoardMahasiswa' element={<DashBoardMahasiswa />}/>
-            <Route path='DashBoardMahasiswa/:IDMahasiswa' element={<DashBoardMahasiswa />}/>
+            {/* Navigasi langsung ke /s/:sessionHash -> redirect ke halaman default */}
+            <Route index element={<Navigate to='HomePage' replace />}/>
+
+            <Route path='Home' element={
+              <RoleGuard page='Home'>
+                <LandingPage />
+              </RoleGuard>
+            }/>
+
+            <Route path='HomePage' element={
+              <RoleGuard page='HomePage'>
+                <HomePage />
+              </RoleGuard>
+            }/>
+
+            <Route path='DaftarCalonMahasiswa' element={
+              <RoleGuard page='DaftarCalonMahasiswa'>
+                <CalonMahasiswa />
+              </RoleGuard>
+            }/>
+
+            <Route path='DashBoardMahasiswa' element={
+              <RoleGuard page='DashBoardMahasiswa'>
+                <DashBoardMahasiswa />
+              </RoleGuard>
+            }/>
+
+            <Route path='DashBoardMahasiswa/:IDMahasiswa' element={
+              <RoleGuard page='DashBoardMahasiswa'>
+                <DashBoardMahasiswa />
+              </RoleGuard>
+            }/>
           </Route>
         </Route>
 

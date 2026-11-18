@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logoutUser } from '../helper/auth';
 import { useSessionPath } from '../helper/useSessionPath';
+import { canAccessPage, getPermissions } from '../helper/rbac';
 
 function HomeIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -62,6 +63,12 @@ const mainMenus: MenuItem[] = [
     matchPrefix: true,
     icon: DashboardIcon,
   },
+  {
+    name: 'HomePage',
+    relativePath: 'HomePage',
+    matchPrefix: true,
+    icon: DashboardIcon
+  }
 ];
 
 export default function MenuSidebar() {
@@ -69,6 +76,12 @@ export default function MenuSidebar() {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const basePath = useSessionPath();
+  const perms = getPermissions(user?.role);
+
+  // Filter menu berdasarkan role user
+  const visibleMenus = mainMenus.filter((item) =>
+    canAccessPage(user?.role, item.relativePath)
+  );
 
   const isItemActive = (item: MenuItem): boolean => {
     const fullPath = `${basePath}/${item.relativePath}`;
@@ -94,7 +107,7 @@ export default function MenuSidebar() {
         </span>
       </div>
 
-      {mainMenus.map((item) => {
+      {visibleMenus.map((item) => {
         const active = isItemActive(item);
         const Icon = item.icon;
         const fullPath = `${basePath}/${item.relativePath}`;

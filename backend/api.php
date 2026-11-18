@@ -28,9 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// --- Load config + helper ---------------------------------------------------
+// --- Load config + helper + middleware auth ---------------------------------
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/middleware/auth.php';
 
 // --- Parameter --------------------------------------------------------------
 $endpoint = $_GET['endpoint'] ?? '';

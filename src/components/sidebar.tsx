@@ -5,10 +5,12 @@ import arrow from '../assets/svg/arrow.svg';
 import MenuSidebar from './MenuSidebar';
 import { getCurrentUser } from '../helper/auth';
 import { useSessionPath } from '../helper/useSessionPath';
+import { getPermissions } from '../helper/rbac';
 
 export default function Sidebar() {
   const user = getCurrentUser();
   const basePath = useSessionPath();
+  const perms = getPermissions(user?.role);
 
   return (
     <aside className='w-80 min-h-screen bg-sidebar px-6 py-6 flex flex-col justify-between shrink-0 shadow-2xl sticky top-0 h-screen overflow-y-auto'>
@@ -44,7 +46,10 @@ export default function Sidebar() {
           <div>
             <h2 className='text-role-text text-xs font-semibold tracking-wider uppercase'>ROLE AKTIF</h2>
             <p className='text-white text-base font-medium mt-0.5'>
-              {user?.email ? user.email.split('@')[0] : 'Mahasiswa aktif'}
+              {perms.label}
+            </p>
+            <p className='text-placeholder text-xs mt-0.5'>
+              {user?.email || '-'}
             </p>
           </div>
           <img src={arrow} className='w-3.5 h-3.5 opacity-70' alt='Role dropdown' />

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Mahasiswa } from '../helper/types.tsx';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSessionPath } from '../helper/useSessionPath';
+import { getAuthHeaders } from '../helper/auth';
 
 export default function LandingPage() {
   const [mahasiswa, setMahasiswa] = useState<Mahasiswa[]>([]);
@@ -13,7 +14,9 @@ export default function LandingPage() {
   useEffect(() => {
     const ambilSemua = async () => {
       try {
-        const response = await fetch('/api.php?endpoint=mahasiswa');
+        const response = await fetch('/api.php?endpoint=mahasiswa', {
+          headers: getAuthHeaders(),
+        });
         if (!response.ok) throw new Error('Gagal mengambil data dari server');
         const data: Mahasiswa[] = await response.json();
         setMahasiswa(data);
