@@ -16,7 +16,7 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
     <>
       {/* Overlay (mobile) */}
       {isOpen && (
-        <div className='fixed inset-0 bg-black/40 z-30 lg:hidden' onClick={onToggle} />
+        <div className='fixed inset-0 bg-black/40 z-30' onClick={onToggle} />
       )}
 
       {/* Tombol buka — fixed, muncul saat sidebar tertutup */}
@@ -35,7 +35,7 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-80 bg-sidebar px-6 py-6 flex flex-col justify-between shrink-0 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 z-40 h-screen w-80 bg-sidebar px-6 py-6 flex flex-col justify-between shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

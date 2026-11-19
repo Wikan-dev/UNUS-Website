@@ -9,7 +9,7 @@ export default function RootLayout() {
   return (
     <div className='flex min-h-screen bg-gray-50 text-gray-900'>
       <Sidebar isOpen={sidebarOpen} onToggle={toggle} />
-      <main className='flex-1 overflow-x-auto min-w-0 transition-all duration-300'>
+      <main className='flex-1 overflow-x-auto min-w-0'>
         <Outlet />
       </main>
     </div>

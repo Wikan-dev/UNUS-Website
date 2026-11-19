@@ -32,3 +32,9 @@ export type DaftarCalonMahasiswaProps = {
   statusDokumen: File | string;
 }
 
+export type PillProps = {
+  color: string;
+  text: string;
+  ballColor?: string;
+  textColor?: string;
+}

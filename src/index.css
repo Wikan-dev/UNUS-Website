@@ -6,6 +6,11 @@
   --color-sidebar: #0F2027;
   --color-role-sidebar: #002147;
   --color-role-text: #A5C8FF;
+  
+  --color-background-home: #DEE9FF;
+  --color-background-card: #F0F3FF;
+
+  --color-primary-2: #FFA02C;
 
   --font-inter: 'inter', sans-serif;
   --font-merrie: 'merrie', sans-serif;
@@ -29,4 +34,8 @@ body {
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
+}
+
+html {
+  cursor: default
 }
