@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logoutUser } from '../helper/auth';
 import { useSessionPath } from '../helper/useSessionPath';
-import { canAccessPage, getPermissions } from '../helper/rbac';
+import { canAccessPage } from '../helper/rbac';
 
 
 function HomeIcon({ className = 'w-5 h-5' }: { className?: string }) {
@@ -77,7 +77,6 @@ export default function MenuSidebar() {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const basePath = useSessionPath();
-  const perms = getPermissions(user?.role);
 
   // Filter menu berdasarkan role user
   const visibleMenus = mainMenus.filter((item) =>

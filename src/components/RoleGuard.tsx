@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { getCurrentUser } from '../helper/auth';
 import { canAccessPage } from '../helper/rbac';
 import { useSessionPath } from '../helper/useSessionPath';

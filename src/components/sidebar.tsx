@@ -14,17 +14,17 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
 
   return (
     <>
-      {/* Overlay (mobile) */}
+      {/* Overlay — z-[55] di atas header (z-40) */}
       {isOpen && (
-        <div className='fixed inset-0 bg-black/40 z-30' onClick={onToggle} />
+        <div className='fixed inset-0 bg-black/40 z-[55]' onClick={onToggle} />
       )}
 
-      {/* Tombol buka — fixed, muncul saat sidebar tertutup */}
+      {/* Tombol buka — z-[60] paling atas, selalu di atas header */}
       {!isOpen && (
         <button
           type='button'
           onClick={onToggle}
-          className='fixed top-4 left-4 z-50 w-11 h-11 rounded-xl bg-sidebar text-white shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center'
+          className='fixed top-4 left-4 z-[60] w-11 h-11 rounded-xl bg-sidebar text-white shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center'
           title='Buka Sidebar'
         >
           <svg className='w-5 h-5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2.5}>
@@ -33,9 +33,9 @@ export default function Sidebar({ isOpen, onToggle }: { isOpen: boolean; onToggl
         </button>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar panel — z-[60] di atas header & overlay */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-screen w-80 bg-sidebar px-6 py-6 flex flex-col justify-between shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 z-[60] h-screen w-80 bg-sidebar px-6 py-6 flex flex-col justify-between shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

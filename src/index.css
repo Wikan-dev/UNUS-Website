@@ -37,5 +37,6 @@ body {
 }
 
 html {
-  cursor: default
+  cursor: default;
+  scroll-behavior: smooth;
 }

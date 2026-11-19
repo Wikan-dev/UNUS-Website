@@ -23,8 +23,16 @@ const StatisticHomeList = [
 
 export default function StatisticHome() {
   return (
-    <div>
-      ini card statis
+    <div className='w-auto bg-background-card mx-15 p-5'>
+      <div className='flex flex-row justify-between'>
+        {StatisticHomeList.map((list) => (
+          <div key={list.title} className='font-merrie'>
+            <h1 className='text-6xl font-bold'>{list.stats}</h1>
+            <h3 className='text-2xl font-inter font-medium mt-2'>{list.title}</h3>
+            <p>{list.para}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
