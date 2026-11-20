@@ -1,22 +1,26 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import NoPendaftaran from '../helper/noPendaftaranFunction.tsx';
 import { useCalonMahasiswaStore } from '../store/useCalonMahasiswaStore';
 import { useSessionPath } from '../helper/useSessionPath';
+import { PRODI_OPTIONS } from '../helper/dashboardConstants';
 
 export default function CalonMahasiswa() {
+  const navigate = useNavigate();
   const basePath = useSessionPath();
   const {
-    noPendaftaran, namaPendaftar, asalSekolah, statusDokumen,
-    setNoPendaftaran, setNamaPendaftar, setAsalSekolah, setStatusDokumen,
+    noPendaftaran, namaPendaftar, asalSekolah, programStudi, statusDokumen,
+    setNoPendaftaran, setNamaPendaftar, setAsalSekolah, setProgramStudi,
     setIjazahFile, setKKFile,
     loading, error, sukses, submitPendaftaran,
   } = useCalonMahasiswaStore();
 
-  // Isi otomatis no. pendaftaran saat halaman dibuka
+  // Isi otomatis no. pendaftaran saat halaman dibuka jika belum ada
   useEffect(() => {
-    setNoPendaftaran(NoPendaftaran());
-  }, [setNoPendaftaran]);
+    if (!noPendaftaran) {
+      setNoPendaftaran(NoPendaftaran());
+    }
+  }, [noPendaftaran, setNoPendaftaran]);
 
   return (
     <div className='p-8 w-full max-w-4xl mx-auto'>
@@ -28,7 +32,7 @@ export default function CalonMahasiswa() {
           </p>
         </div>
         <Link
-          to={`${basePath}/Home`}
+          to={`${basePath}/Home?tab=calon`}
           className='px-4 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-xl text-sm font-medium transition'
         >
           ← Kembali ke Home
@@ -44,16 +48,29 @@ export default function CalonMahasiswa() {
           }}
         >
           <div>
-            <label className='block text-xs font-semibold text-gray-600 uppercase mb-1 tracking-wider'>
-              No. Pendaftaran
-            </label>
+            <div className='flex items-center justify-between mb-1'>
+              <label className='block text-xs font-semibold text-gray-600 uppercase tracking-wider'>
+                No. Pendaftaran
+              </label>
+              <button
+                type='button'
+                onClick={() => setNoPendaftaran(NoPendaftaran())}
+                className='text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer flex items-center gap-1 transition'
+                title='Buat nomor pendaftaran baru'
+              >
+                ↻ Acak Ulang
+              </button>
+            </div>
             <input
               readOnly
               placeholder='no. pendaftaran'
               value={noPendaftaran}
               onChange={(e) => setNoPendaftaran(e.target.value)}
-              className='w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 font-mono text-sm'
+              className='w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 font-mono text-sm select-all'
             />
+            <p className='text-[11px] text-gray-400 mt-1'>
+              Nomor pendaftaran dibuat otomatis & unik untuk setiap pendaftaran.
+            </p>
           </div>
 
           <div>
@@ -86,6 +103,27 @@ export default function CalonMahasiswa() {
 
           <div>
             <label className='block text-xs font-semibold text-gray-600 uppercase mb-1 tracking-wider'>
+              Pilihan Program Studi <span className='text-red-500'>*</span>
+            </label>
+            <select
+              value={programStudi}
+              onChange={(e) => setProgramStudi(e.target.value)}
+              className='w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white cursor-pointer font-medium'
+              required
+            >
+              {PRODI_OPTIONS.map((prodi) => (
+                <option key={prodi} value={prodi}>
+                  {prodi}
+                </option>
+              ))}
+            </select>
+            <p className='text-[11px] text-gray-400 mt-1'>
+              Pilih program studi yang Anda minati di Universitas Nusantara.
+            </p>
+          </div>
+
+          <div>
+            <label className='block text-xs font-semibold text-gray-600 uppercase mb-1 tracking-wider'>
               Berkas Ijazah
             </label>
             <input
@@ -113,12 +151,14 @@ export default function CalonMahasiswa() {
               Status Dokumen
             </label>
             <input
-              placeholder='status Dokumen'
+              readOnly
               type='text'
-              value={statusDokumen}
-              onChange={(e) => setStatusDokumen(e.target.value)}
-              className='w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 text-sm'
+              value={statusDokumen || 'Menunggu Validasi'}
+              className='w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 text-sm cursor-not-allowed select-none'
             />
+            <p className='text-[11px] text-gray-400 mt-1'>
+              Status dokumen otomatis terisi &quot;Menunggu Validasi&quot; hingga diverifikasi oleh panitia.
+            </p>
           </div>
 
           <button
@@ -131,7 +171,23 @@ export default function CalonMahasiswa() {
         </form>
 
         {error && <p className='mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200'>Error: {error}</p>}
-        {sukses && <p className='mt-4 text-sm text-emerald-600 bg-emerald-50 p-3 rounded-lg border border-emerald-200'>{sukses}</p>}
+        {sukses && (
+          <div className='mt-4 p-4 text-sm text-emerald-800 bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3'>
+            <div>
+              <p className='font-semibold'>{sukses}</p>
+              <p className='text-xs text-emerald-600 mt-0.5'>
+                Data pendaftaran telah tercatat di sistem dan dapat dilihat pada dashboard utama.
+              </p>
+            </div>
+            <button
+              type='button'
+              onClick={() => navigate(`${basePath}/Home?tab=calon`)}
+              className='px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition cursor-pointer whitespace-nowrap'
+            >
+              Lihat di Dashboard Home →
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

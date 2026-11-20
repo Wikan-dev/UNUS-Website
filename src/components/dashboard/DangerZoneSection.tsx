@@ -147,7 +147,37 @@ export default function DangerZoneSection({
                       {opt.label} - {opt.desc}
                     </option>
                   ))}
+                  {!STATUS_OPTIONS.some((opt) => opt.value === formData.status_akademik) && formData.status_akademik && (
+                    <option value={formData.status_akademik}>
+                      {formData.status_akademik} (Belum Aktif)
+                    </option>
+                  )}
                 </select>
+
+                {formData.status_akademik !== 'Aktif' ? (
+                  <div className='mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2'>
+                    <div className='text-xs text-emerald-900'>
+                      <span className='font-bold block'>Mahasiswa ini belum berstatus Aktif ({formData.status_akademik})</span>
+                      <span>Klik tombol untuk langsung memilih status <strong>Aktif</strong> dan menerbitkan NIM resmi.</span>
+                    </div>
+                    <button
+                      type='button'
+                      onClick={() => onFormChange({ status_akademik: 'Aktif' })}
+                      className='px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-lg cursor-pointer transition shrink-0 flex items-center justify-center gap-1.5 shadow-xs'
+                    >
+                      <span>✓</span>
+                      <span>Pilih Status 'Aktif'</span>
+                    </button>
+                  </div>
+                ) : mhs.status_akademik !== 'Aktif' ? (
+                  <div className='mt-3 p-3 bg-emerald-100/80 border border-emerald-300 rounded-xl text-xs text-emerald-900 flex items-center gap-2'>
+                    <span className='text-base'>🎉</span>
+                    <span>
+                      <strong>Status dipilih 'Aktif'!</strong> Klik tombol <strong>Simpan Perubahan</strong> di bilah atas (atau <strong>Simpan Khusus Data Sensitif</strong> di bawah) untuk menyimpan dan menerbitkan NIM resmi.
+                    </span>
+                  </div>
+                ) : null}
+
                 <p className='text-[11px] text-red-600 mt-2 font-medium flex items-center gap-1.5'>
                   <span>⚠️</span> Memilih status 'DO' atau 'Cuti' akan mencabut hak aktif perkuliahan.
                 </p>
@@ -165,6 +195,15 @@ export default function DangerZoneSection({
                   <span className='text-xs font-normal text-red-600'>Terkunci (Read Only)</span>
                 </div>
                 <p className='text-[11px] text-gray-500 mt-1.5'>{currentStatusObj?.desc}</p>
+
+                {mhs.status_akademik !== 'Aktif' && (
+                  <div className='mt-3 p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-center justify-between gap-3'>
+                    <div>
+                      <span className='font-bold block'>Status: {mhs.status_akademik} (Belum Aktif)</span>
+                      <span>Klik tombol <strong>Ubah Data Mahasiswa</strong> di bilah atas untuk mengubah status mahasiswa ini menjadi <strong>Aktif</strong>.</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

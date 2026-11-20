@@ -22,6 +22,11 @@
 function handleCalonMahasiswa($conn, $id) {
     $method = $_SERVER['REQUEST_METHOD'];
 
+    // Dukungan override method via header jika client tidak mendukung PUT/PATCH murni
+    if ($method === 'POST' && isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
+        $method = strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']);
+    }
+
     switch ($method) {
         case 'GET':
             if ($id !== null && $id !== '') {
@@ -32,7 +37,21 @@ function handleCalonMahasiswa($conn, $id) {
             break;
 
         case 'POST':
-            simpanPendaftaran($conn);
+            // Cek apakah ini aksi update status (payload JSON yang memiliki status_dokumen / status_penerimaan)
+            $raw = file_get_contents('php://input');
+            $jsonData = json_decode($raw, true);
+            if (is_array($jsonData) && (isset($jsonData['status_dokumen']) || isset($jsonData['status_penerimaan']))) {
+                updateStatusCalonMahasiswa($conn, $id, $jsonData);
+            } else {
+                simpanPendaftaran($conn);
+            }
+            break;
+
+        case 'PUT':
+        case 'PATCH':
+            $raw = file_get_contents('php://input');
+            $jsonData = json_decode($raw, true);
+            updateStatusCalonMahasiswa($conn, $id, is_array($jsonData) ? $jsonData : []);
             break;
 
         default:
@@ -52,6 +71,10 @@ function simpanPendaftaran($conn) {
     $noPendaftaran = trim($_POST['no_pendaftaran'] ?? '');
     $namaPendaftar = trim($_POST['nama_pendaftar'] ?? '');
     $asalSekolah   = trim($_POST['asal_sekolah'] ?? '');
+    $programStudi  = trim($_POST['program_studi'] ?? 'Teknik Informatika');
+    if ($programStudi === '') {
+        $programStudi = 'Teknik Informatika';
+    }
     $statusDokumen = trim($_POST['status_dokumen'] ?? 'Menunggu Validasi');
 
     if ($idUser <= 0) {
@@ -59,8 +82,13 @@ function simpanPendaftaran($conn) {
         return;
     }
 
-    if ($noPendaftaran === '' || $namaPendaftar === '' || $asalSekolah === '') {
-        responseJSON(["error" => "Semua kolom teks (No. Pendaftaran, Nama, Asal Sekolah) wajib diisi"], 400);
+    // Jika nomor pendaftaran kosong, buatkan nomor unik otomatis
+    if ($noPendaftaran === '') {
+        $noPendaftaran = 'CLNMHS' . date('Ymd') . '-' . str_pad((string)random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+    }
+
+    if ($namaPendaftar === '' || $asalSekolah === '') {
+        responseJSON(["error" => "Kolom Nama dan Asal Sekolah wajib diisi"], 400);
         return;
     }
 
@@ -139,8 +167,8 @@ function simpanPendaftaran($conn) {
     // F. SIMPAN KE DATABASE (kolom WAJIB sama dengan skema tabel)
     // ------------------------------------------------------------
     $query = "INSERT INTO calon_mahasiswa
-              (id_user, no_pendaftaran, nama_pendaftar, asal_sekolah, url_ijazah, url_kk, status_dokumen)
-              VALUES (?, ?, ?, ?, ?, ?, ?)";
+              (id_user, no_pendaftaran, nama_pendaftar, asal_sekolah, program_studi, url_ijazah, url_kk, status_dokumen)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($query);
     if (!$stmt) {
@@ -148,12 +176,13 @@ function simpanPendaftaran($conn) {
         return;
     }
 
-    // "issssss" = 1 integer (id_user) + 6 string
-    $stmt->bind_param("issssss",
+    // "isssssss" = 1 integer (id_user) + 7 string
+    $stmt->bind_param("isssssss",
         $idUser,
         $noPendaftaran,
         $namaPendaftar,
         $asalSekolah,
+        $programStudi,
         $namaFileIjazah,
         $namaFileKK,
         $statusDokumen
@@ -194,6 +223,7 @@ function simpanPendaftaran($conn) {
             "no_pendaftaran" => $noPendaftaran,
             "nama_pendaftar" => $namaPendaftar,
             "asal_sekolah"   => $asalSekolah,
+            "program_studi"  => $programStudi,
             "status_dokumen" => $statusDokumen,
             "ijazah_file"    => $namaFileIjazah,
             "kk_file"        => $namaFileKK,
@@ -243,7 +273,7 @@ function prosesUploadBerkas($file, $awalanPrefix, $folderTujuan, &$pesanError) {
 function ambilSemuaCalonMahasiswa($conn) {
     // Tabel ini TIDAK punya kolom created_at — urut dari id terbaru.
     $query = "SELECT id_pendaftar, id_user, no_pendaftaran, nama_pendaftar,
-                     asal_sekolah, url_ijazah, url_kk, status_dokumen, status_penerimaan
+                     asal_sekolah, program_studi, url_ijazah, url_kk, status_dokumen, status_penerimaan
               FROM calon_mahasiswa
               ORDER BY id_pendaftar DESC";
     $result = $conn->query($query);
@@ -268,7 +298,7 @@ function ambilDetailCalonMahasiswa($conn, $id) {
     // Boleh dicari lewat id_pendaftar (angka) ATAU no_pendaftaran (teks)
     $stmt = $conn->prepare(
         "SELECT id_pendaftar, id_user, no_pendaftaran, nama_pendaftar,
-                asal_sekolah, url_ijazah, url_kk, status_dokumen, status_penerimaan
+                asal_sekolah, program_studi, url_ijazah, url_kk, status_dokumen, status_penerimaan
          FROM calon_mahasiswa
          WHERE id_pendaftar = ? OR no_pendaftaran = ?"
     );
@@ -290,4 +320,110 @@ function ambilDetailCalonMahasiswa($conn, $id) {
     }
 
     responseJSON($data, 200);
+}
+
+// ============================================================
+// 5. FUNGSI UBAH STATUS VALIDASI & PENERIMAAN (PUT / PATCH)
+// ============================================================
+function updateStatusCalonMahasiswa($conn, $id, array $data = []) {
+    if (empty($data)) {
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+    }
+
+    $targetId = $data['id_pendaftar'] ?? $data['no_pendaftaran'] ?? $id;
+    if (!$targetId) {
+        responseJSON(["error" => "id_pendaftar atau no_pendaftaran wajib disertakan"], 400);
+        return;
+    }
+
+    $statusDokumen = isset($data['status_dokumen']) ? trim($data['status_dokumen']) : null;
+    $statusPenerimaan = isset($data['status_penerimaan']) ? trim($data['status_penerimaan']) : null;
+
+    if ($statusDokumen === null && $statusPenerimaan === null) {
+        responseJSON(["error" => "Status dokumen atau status penerimaan harus dikirim"], 400);
+        return;
+    }
+
+    // Nilai yang diizinkan sesuai ENUM database
+    $statusDokumenDiizinkan = ['Menunggu Validasi', 'Valid', 'Ditolak'];
+    $statusPenerimaanDiizinkan = ['Diproses', 'Lolos', 'Tidak Lolos'];
+
+    if ($statusDokumen !== null && !in_array($statusDokumen, $statusDokumenDiizinkan, true)) {
+        responseJSON([
+            "error" => "Status dokumen '$statusDokumen' tidak valid. Pilihan: " . implode(', ', $statusDokumenDiizinkan)
+        ], 400);
+        return;
+    }
+
+    if ($statusPenerimaan !== null && !in_array($statusPenerimaan, $statusPenerimaanDiizinkan, true)) {
+        responseJSON([
+            "error" => "Status penerimaan '$statusPenerimaan' tidak valid. Pilihan: " . implode(', ', $statusPenerimaanDiizinkan)
+        ], 400);
+        return;
+    }
+
+    // Susun kolom yang akan di-update
+    $setParts = [];
+    $types = '';
+    $params = [];
+
+    if ($statusDokumen !== null) {
+        $setParts[] = "status_dokumen = ?";
+        $types .= 's';
+        $params[] = $statusDokumen;
+    }
+
+    if ($statusPenerimaan !== null) {
+        $setParts[] = "status_penerimaan = ?";
+        $types .= 's';
+        $params[] = $statusPenerimaan;
+    }
+
+    if (isset($data['program_studi']) && trim($data['program_studi']) !== '') {
+        $setParts[] = "program_studi = ?";
+        $types .= 's';
+        $params[] = trim($data['program_studi']);
+    }
+
+    // WHERE id_pendaftar = ? OR no_pendaftaran = ?
+    $types .= 'ss';
+    $params[] = (string)$targetId;
+    $params[] = (string)$targetId;
+
+    $query = "UPDATE calon_mahasiswa SET " . implode(', ', $setParts) . " WHERE id_pendaftar = ? OR no_pendaftaran = ?";
+    $stmt = $conn->prepare($query);
+
+    if (!$stmt) {
+        responseJSON(["error" => "Gagal menyiapkan query update: " . $conn->error], 500);
+        return;
+    }
+
+    $stmt->bind_param($types, ...$params);
+    $executed = $stmt->execute();
+
+    if (!$executed) {
+        responseJSON(["error" => "Gagal memperbarui status: " . $stmt->error], 500);
+        $stmt->close();
+        return;
+    }
+
+    $stmt->close();
+
+    // Berikan respons sukses beserta data terbaru
+    $checkStmt = $conn->prepare(
+        "SELECT id_pendaftar, id_user, no_pendaftaran, nama_pendaftar,
+                asal_sekolah, program_studi, url_ijazah, url_kk, status_dokumen, status_penerimaan
+         FROM calon_mahasiswa
+         WHERE id_pendaftar = ? OR no_pendaftaran = ?"
+    );
+    $checkStmt->bind_param("ss", $targetId, $targetId);
+    $checkStmt->execute();
+    $updatedRow = $checkStmt->get_result()->fetch_assoc();
+    $checkStmt->close();
+
+    responseJSON([
+        "message" => "Status pendaftaran berhasil diperbarui",
+        "data"    => $updatedRow
+    ], 200);
 }

@@ -48,14 +48,14 @@ export default function DashboardHeader({
               </h1>
               <span
                 className={`px-3 py-0.5 text-xs font-semibold rounded-full border ${
-                  mhs.status_akademik === 'Aktif'
+                  (isEditing ? formData.status_akademik : mhs.status_akademik) === 'Aktif'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : mhs.status_akademik === 'DO'
+                    : (isEditing ? formData.status_akademik : mhs.status_akademik) === 'DO'
                     ? 'bg-red-50 text-red-700 border-red-200'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}
               >
-                {mhs.status_akademik}
+                {isEditing ? formData.status_akademik : mhs.status_akademik}
               </span>
             </div>
             <p className='text-gray-500 font-mono text-sm mt-1 flex items-center gap-2'>

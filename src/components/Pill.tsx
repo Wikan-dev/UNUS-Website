@@ -2,9 +2,12 @@ import type { PillProps } from '../helper/types.tsx';
 
 export default function Pill({ color, text, textColor, ballColor }: PillProps) {
   return (
-    <div className='text-xl w-fit py-2 px-4 flex flex-row items-center rounded-full gap-2' style={{ backgroundColor: color }}>
-      <div className='rounded-full w-4 h-4' style={{ backgroundColor: ballColor }} />
-      <h1 className='text-xl font-bold' style={textColor ? { color: textColor } : undefined}>{text}</h1>
+    <div
+      className='inline-flex items-center gap-2 py-1.5 px-3.5 rounded-full text-xs font-semibold tracking-wide w-fit shadow-xs'
+      style={{ backgroundColor: color }}
+    >
+      <span className='w-2 h-2 rounded-full shrink-0' style={{ backgroundColor: ballColor }} />
+      <span style={textColor ? { color: textColor } : { color: '#0F2027' }}>{text}</span>
     </div>
-  )
+  );
 }

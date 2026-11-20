@@ -23,6 +23,19 @@ export type AuthResponse = {
   error?: string;
 };
 
+export type CalonMahasiswa = {
+  id_pendaftar: string | number;
+  id_user: string | number;
+  no_pendaftaran: string;
+  nama_pendaftar: string;
+  asal_sekolah: string;
+  program_studi?: string;
+  url_ijazah: string;
+  url_kk: string;
+  status_dokumen: 'Menunggu Validasi' | 'Valid' | 'Ditolak' | string;
+  status_penerimaan?: 'Diproses' | 'Lolos' | 'Tidak Lolos' | string;
+};
+
 export type DaftarCalonMahasiswaProps = {
   noPendaftaran: string;
   namaPendaftaran: string;

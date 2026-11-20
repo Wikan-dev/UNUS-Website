@@ -17,7 +17,7 @@ export default function LandingFooter() {
             </div>
           </div>
           <p className='text-sm text-white/60 mt-4 leading-relaxed'>Kampus Utama: Jl. Pendidikan No. 1, Nusantara, Indonesia. Gedung Rektorat Kampus Arjuna, Jakarta Pusat, 10110.</p>
-          <p className='text-sm text-white/60 mt-2'>Telepon: (021) 555-0198 (Burung) · Helpdesk: helpdesk.siap@unus.ac.id</p>
+          <p className='text-sm text-white/60 mt-2'>Telepon: (021) 555-0198 · Helpdesk: helpdesk.siap@unus.ac.id</p>
           <div className='flex gap-2 mt-4'>
             <span className='text-[11px] font-semibold bg-primary-2 px-3 py-1.5 rounded-full'>Akreditasi Unggul BAN-PT</span>
             <span className='text-[11px] font-semibold bg-white/10 px-3 py-1.5 rounded-full'>QS 5-Star</span>

@@ -77,7 +77,12 @@ export async function updateMahasiswaDetail(
     throw new Error(resData.error || 'Gagal menyimpan perubahan ke basis data.');
   }
 
-  return resData.data;
+  const student = (resData && typeof resData === 'object' && 'data' in resData) ? resData.data : resData;
+  if (!student || typeof student !== 'object' || !student.nim) {
+    throw new Error('Data mahasiswa hasil pembaruan tidak valid dari server.');
+  }
+
+  return student;
 }
 
 /**

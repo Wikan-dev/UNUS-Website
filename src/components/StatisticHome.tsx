@@ -23,16 +23,23 @@ const StatisticHomeList = [
 
 export default function StatisticHome() {
   return (
-    <div className='w-auto bg-background-card mx-15 p-5'>
-      <div className='flex flex-row justify-between'>
-        {StatisticHomeList.map((list) => (
-          <div key={list.title} className='font-merrie'>
-            <h1 className='text-6xl font-bold'>{list.stats}</h1>
-            <h3 className='text-2xl font-inter font-medium mt-2'>{list.title}</h3>
-            <p>{list.para}</p>
+    <section className='grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6'>
+      {StatisticHomeList.map((item) => (
+        <div
+          key={item.title}
+          className='bg-white/80 backdrop-blur-sm rounded-2xl p-5 sm:p-6 border border-gray-200/60 shadow-xs hover:shadow-md transition-shadow'
+        >
+          <div className='text-3xl sm:text-4xl font-bold font-merrie text-sidebar tracking-tight'>
+            {item.stats}
           </div>
-        ))}
-      </div>
-    </div>
+          <h3 className='text-sm sm:text-base font-semibold text-gray-800 mt-2 font-inter'>
+            {item.title}
+          </h3>
+          <p className='text-xs text-gray-500 mt-1 leading-relaxed'>
+            {item.para}
+          </p>
+        </div>
+      ))}
+    </section>
   )
 }

@@ -1,15 +1,13 @@
 import type { Mahasiswa } from './types.tsx';
 
-// Membuat format no. pendaftaran dari tanggal sekarang, contoh: CLNMHS202610
+// Membuat format no. pendaftaran unik dari tanggal + angka acak, contoh: CLNMHS20261119-4821
 export default function NoPendaftaran() {
-  const date = new Date();                     // objek Date berisi waktu sekarang
-
-  const dateYear = date.getFullYear();         // ambil tahun, contoh: 2026
-  const dateMonth = String(date.getMonth() + 1) // bulan (0-11) jadi 1-12, lalu jadi string
-    .padStart(2, '0');                          // tambah angka 0 di depan bila 1 digit, contoh: 9 -> "09"
-  const dateNow = `CLNMHS${dateYear}${dateMonth}`; // gabungkan jadi satu string
-  console.log(dateNow);
-  return dateNow;
+  const date = new Date();
+  const dateYear = date.getFullYear();
+  const dateMonth = String(date.getMonth() + 1).padStart(2, '0');
+  const dateDay = String(date.getDate()).padStart(2, '0');
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 4 digit angka unik acak
+  return `CLNMHS${dateYear}${dateMonth}${dateDay}-${randomSuffix}`;
 }
 
 // Mengambil data mahasiswa dari API PHP (backend/controllers/mahasiswa.php).

@@ -123,6 +123,45 @@ function getMahasiswaByHash($conn, string $hashMasuk, ?array $authUser = null) {
     $data = $result->fetch_assoc();
     $stmt->close();
 
+    // Jika tidak ditemukan di tabel mahasiswa, periksa tabel calon_mahasiswa
+    if (!$data) {
+        // Cek jika calon mahasiswa ini sudah dipromosikan ke mahasiswa
+        $pQuery = "SELECT m.nim, m.id_user, m.nama_lengkap, m.program_studi, m.angkatan, m.status_akademik, m.dosen_wali_nidn,
+                          u.email AS user_email,
+                          SHA2(CONCAT(m.nim, ?), 256) AS hash_profil
+                   FROM mahasiswa m
+                   JOIN calon_mahasiswa c ON m.id_user = c.id_user AND m.nama_lengkap = c.nama_pendaftar
+                   LEFT JOIN users u ON m.id_user = u.id_user
+                   WHERE SHA2(CONCAT(c.no_pendaftaran, ?), 256) = ?";
+        $pStmt = $conn->prepare($pQuery);
+        if ($pStmt) {
+            $pStmt->bind_param("sss", $hashsalt, $hashsalt, $hashMasuk);
+            $pStmt->execute();
+            $data = $pStmt->get_result()->fetch_assoc();
+            $pStmt->close();
+        }
+    }
+
+    if (!$data) {
+        $cQuery = "SELECT c.no_pendaftaran AS nim, c.id_user, c.nama_pendaftar AS nama_lengkap,
+                          COALESCE(NULLIF(c.program_studi, ''), 'Teknik Informatika') AS program_studi,
+                          YEAR(CURRENT_DATE) AS angkatan,
+                          c.status_dokumen AS status_akademik,
+                          NULL AS dosen_wali_nidn,
+                          u.email AS user_email,
+                          SHA2(CONCAT(c.no_pendaftaran, ?), 256) AS hash_profil
+                   FROM calon_mahasiswa c
+                   LEFT JOIN users u ON c.id_user = u.id_user
+                   WHERE SHA2(CONCAT(c.no_pendaftaran, ?), 256) = ?";
+        $cStmt = $conn->prepare($cQuery);
+        if ($cStmt) {
+            $cStmt->bind_param("sss", $hashsalt, $hashsalt, $hashMasuk);
+            $cStmt->execute();
+            $data = $cStmt->get_result()->fetch_assoc();
+            $cStmt->close();
+        }
+    }
+
     if (!$data) {
         responseJSON(["error" => "Profil mahasiswa tidak ditemukan"], 404);
         return;
@@ -166,6 +205,44 @@ function getMahasiswaById($conn, $nim, ?array $authUser = null) {
     $data = $result->fetch_assoc();
     $stmt->close();
 
+    // Jika tidak ditemukan di tabel mahasiswa, periksa apakah calon mahasiswa ini sudah dipromosikan ke mahasiswa
+    if (!$data) {
+        $pQuery = "SELECT m.nim, m.id_user, m.nama_lengkap, m.program_studi, m.angkatan, m.status_akademik, m.dosen_wali_nidn,
+                          u.email AS user_email,
+                          SHA2(CONCAT(m.nim, ?), 256) AS hash_profil
+                   FROM mahasiswa m
+                   JOIN calon_mahasiswa c ON m.id_user = c.id_user AND m.nama_lengkap = c.nama_pendaftar
+                   LEFT JOIN users u ON m.id_user = u.id_user
+                   WHERE c.no_pendaftaran = ? OR c.id_pendaftar = ?";
+        $pStmt = $conn->prepare($pQuery);
+        if ($pStmt) {
+            $pStmt->bind_param("sss", $hashsalt, $nim, $nim);
+            $pStmt->execute();
+            $data = $pStmt->get_result()->fetch_assoc();
+            $pStmt->close();
+        }
+    }
+
+    if (!$data) {
+        $cQuery = "SELECT c.no_pendaftaran AS nim, c.id_user, c.nama_pendaftar AS nama_lengkap,
+                          COALESCE(NULLIF(c.program_studi, ''), 'Teknik Informatika') AS program_studi,
+                          YEAR(CURRENT_DATE) AS angkatan,
+                          c.status_dokumen AS status_akademik,
+                          NULL AS dosen_wali_nidn,
+                          u.email AS user_email,
+                          SHA2(CONCAT(c.no_pendaftaran, ?), 256) AS hash_profil
+                   FROM calon_mahasiswa c
+                   LEFT JOIN users u ON c.id_user = u.id_user
+                   WHERE c.no_pendaftaran = ? OR c.id_pendaftar = ?";
+        $cStmt = $conn->prepare($cQuery);
+        if ($cStmt) {
+            $cStmt->bind_param("sss", $hashsalt, $nim, $nim);
+            $cStmt->execute();
+            $data = $cStmt->get_result()->fetch_assoc();
+            $cStmt->close();
+        }
+    }
+
     if (!$data) {
         responseJSON(["error" => "Mahasiswa dengan NIM $nim tidak ditemukan"], 404);
         return;
@@ -185,7 +262,7 @@ function getMahasiswaById($conn, $nim, ?array $authUser = null) {
     responseJSON($data, 200);
 }
 
-// --- Mengambil SEMUA data mahasiswa -----------------------------------------
+// --- Mengambil SEMUA data mahasiswa (Termasuk Calon Mahasiswa Terdaftar) ---
 function getAllMahasiswa($conn) {
     global $hashsalt;
 
@@ -194,7 +271,22 @@ function getAllMahasiswa($conn) {
                      SHA2(CONCAT(m.nim, ?), 256) AS hash_profil
               FROM mahasiswa m
               LEFT JOIN users u ON m.id_user = u.id_user
-              ORDER BY m.nim";
+
+              UNION ALL
+
+              SELECT c.no_pendaftaran AS nim, c.id_user, c.nama_pendaftar AS nama_lengkap,
+                     COALESCE(NULLIF(c.program_studi, ''), 'Teknik Informatika') AS program_studi,
+                     YEAR(CURRENT_DATE) AS angkatan,
+                     c.status_dokumen AS status_akademik,
+                     NULL AS dosen_wali_nidn,
+                     u.email AS user_email,
+                     SHA2(CONCAT(c.no_pendaftaran, ?), 256) AS hash_profil
+              FROM calon_mahasiswa c
+              LEFT JOIN users u ON c.id_user = u.id_user
+              WHERE NOT EXISTS (
+                  SELECT 1 FROM mahasiswa m2 WHERE m2.id_user = c.id_user AND m2.nama_lengkap = c.nama_pendaftar
+              )
+              ORDER BY nim";
 
     $stmt = $conn->prepare($query);
     if (!$stmt) {
@@ -202,7 +294,7 @@ function getAllMahasiswa($conn) {
         return;
     }
 
-    $stmt->bind_param("s", $hashsalt);
+    $stmt->bind_param("ss", $hashsalt, $hashsalt);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -251,6 +343,142 @@ function updateMahasiswa($conn, $urlId) {
     $cekStmt->close();
 
     if (!$mahasiswaLama) {
+        // Cek apakah data berada di tabel calon_mahasiswa
+        $cCheck = $conn->prepare("SELECT id_pendaftar, no_pendaftaran, id_user, nama_pendaftar FROM calon_mahasiswa WHERE no_pendaftaran = ?");
+        if ($cCheck) {
+            $cCheck->bind_param("s", $originalNim);
+            $cCheck->execute();
+            $calonRow = $cCheck->get_result()->fetch_assoc();
+            $cCheck->close();
+            if ($calonRow) {
+                $newNim         = trim($data['nim'] ?? $originalNim);
+                $namaLengkap    = trim($data['nama_lengkap'] ?? $calonRow['nama_pendaftar']);
+                $rawProdi       = trim($data['program_studi'] ?? '');
+                $programStudi   = ($rawProdi !== '' && $rawProdi !== 'Calon Mahasiswa (PMB)') ? $rawProdi : 'Teknik Informatika';
+                $angkatan       = (int)($data['angkatan'] ?? date('Y'));
+                if ($angkatan < 1990 || $angkatan > 2100) {
+                    $angkatan = (int)date('Y');
+                }
+                $statusAkademik = trim($data['status_akademik'] ?? 'Aktif');
+                $dosenWaliNidn  = isset($data['dosen_wali_nidn']) && trim($data['dosen_wali_nidn']) !== '' ? trim($data['dosen_wali_nidn']) : null;
+                $userEmail      = isset($data['user_email']) ? trim($data['user_email']) : null;
+
+                $statusDiizinkan = ['Aktif', 'Cuti', 'Lulus', 'DO'];
+                // Promosikan menjadi Mahasiswa Resmi jika:
+                // 1) Status akademik diubah menjadi salah satu status aktif mahasiswa ('Aktif', 'Cuti', dsb)
+                // 2) ATAU NIM diubah menjadi NIM resmi (bukan berawalan CLNMHS)
+                $isPromoted = in_array($statusAkademik, $statusDiizinkan, true)
+                              || ($newNim !== '' && !str_starts_with($newNim, 'CLNMHS'));
+
+                if ($isPromoted) {
+                    // Jika status akademik sebelumnya masih 'Menunggu Validasi' atau 'Valid', jadikan 'Aktif'
+                    if (!in_array($statusAkademik, $statusDiizinkan, true)) {
+                        $statusAkademik = 'Aktif';
+                    }
+
+                    // Tentukan NIM resmi
+                    if ($newNim !== '' && !str_starts_with($newNim, 'CLNMHS')) {
+                        $finalNim = $newNim;
+                    } else {
+                        // Generate NIM otomatis berikutnya dari max NIM numerik
+                        $maxRes = $conn->query("SELECT MAX(CAST(nim AS UNSIGNED)) as max_nim FROM mahasiswa WHERE nim REGEXP '^[0-9]+$'");
+                        $maxNim = ($maxRes && $mRow = $maxRes->fetch_assoc()) ? (int)$mRow['max_nim'] : 0;
+                        if ($maxNim > 0) {
+                            $finalNim = (string)($maxNim + 1);
+                        } else {
+                            $finalNim = date('y') . "01001";
+                        }
+                    }
+
+                    // Pastikan NIM belum terdaftar di tabel mahasiswa
+                    $cekNim = $conn->prepare("SELECT nim FROM mahasiswa WHERE nim = ?");
+                    $cekNim->bind_param("s", $finalNim);
+                    $cekNim->execute();
+                    if ($cekNim->get_result()->num_rows > 0) {
+                        $cekNim->close();
+                        responseJSON(["error" => "NIM '$finalNim' sudah terdaftar untuk mahasiswa lain"], 409);
+                        return;
+                    }
+                    $cekNim->close();
+
+                    // Simpan ke tabel mahasiswa
+                    $ins = $conn->prepare("INSERT INTO mahasiswa (nim, id_user, nama_lengkap, program_studi, angkatan, status_akademik, dosen_wali_nidn) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    if (!$ins) {
+                        responseJSON(["error" => "Gagal menyiapkan insert mahasiswa: " . $conn->error], 500);
+                        return;
+                    }
+                    $idUser = (int)$calonRow['id_user'];
+                    $ins->bind_param("sississ", $finalNim, $idUser, $namaLengkap, $programStudi, $angkatan, $statusAkademik, $dosenWaliNidn);
+                    $ins->execute();
+                    $ins->close();
+
+                    // Update role user menjadi mahasiswa jika ada akun user
+                    if ($idUser > 0) {
+                        $conn->query("UPDATE users SET role = 'mahasiswa' WHERE id_user = $idUser AND role = 'calon_mahasiswa'");
+                    }
+
+                    // Perbarui status calon_mahasiswa menjadi Valid & Lolos serta catat program studi pilihannya
+                    $uCalon = $conn->prepare("UPDATE calon_mahasiswa SET status_dokumen = 'Valid', status_penerimaan = 'Lolos', nama_pendaftar = ?, program_studi = ? WHERE no_pendaftaran = ?");
+                    if ($uCalon) {
+                        $uCalon->bind_param("sss", $namaLengkap, $programStudi, $originalNim);
+                        $uCalon->execute();
+                        $uCalon->close();
+                    }
+
+                    // Ambil record mahasiswa baru yang berhasil dibuat
+                    $ambilBaru = $conn->prepare(
+                        "SELECT m.nim, m.id_user, m.nama_lengkap, m.program_studi, m.angkatan, m.status_akademik, m.dosen_wali_nidn,
+                                u.email AS user_email,
+                                SHA2(CONCAT(m.nim, ?), 256) AS hash_profil
+                         FROM mahasiswa m
+                         LEFT JOIN users u ON m.id_user = u.id_user
+                         WHERE m.nim = ?"
+                    );
+                    $ambilBaru->bind_param("ss", $hashsalt, $finalNim);
+                    $ambilBaru->execute();
+                    $dataBaru = $ambilBaru->get_result()->fetch_assoc();
+                    $ambilBaru->close();
+
+                    responseJSON([
+                        "message" => "Calon mahasiswa berhasil resmi diterima pada Program Studi $programStudi dengan NIM $finalNim!",
+                        "data"    => $dataBaru,
+                    ], 200);
+                    return;
+                } else {
+                    // Update data calon mahasiswa saja (termasuk nama, program_studi, dan status dokumen)
+                    $uProdi = ($rawProdi !== '' && $rawProdi !== 'Calon Mahasiswa (PMB)') ? $rawProdi : 'Teknik Informatika';
+                    $validDocStatuses = ['Menunggu Validasi', 'Valid', 'Ditolak'];
+                    $newDocStatus = in_array($statusAkademik, $validDocStatuses, true) ? $statusAkademik : 'Valid';
+                    $uStmt = $conn->prepare("UPDATE calon_mahasiswa SET nama_pendaftar = ?, program_studi = ?, status_dokumen = ? WHERE no_pendaftaran = ?");
+                    $uStmt->bind_param("ssss", $namaLengkap, $uProdi, $newDocStatus, $originalNim);
+                    $uStmt->execute();
+                    $uStmt->close();
+
+                    $cAmbil = $conn->prepare(
+                        "SELECT c.no_pendaftaran AS nim, c.id_user, c.nama_pendaftar AS nama_lengkap,
+                                COALESCE(NULLIF(c.program_studi, ''), 'Teknik Informatika') AS program_studi,
+                                YEAR(CURRENT_DATE) AS angkatan,
+                                c.status_dokumen AS status_akademik,
+                                NULL AS dosen_wali_nidn,
+                                u.email AS user_email,
+                                SHA2(CONCAT(c.no_pendaftaran, ?), 256) AS hash_profil
+                         FROM calon_mahasiswa c
+                         LEFT JOIN users u ON c.id_user = u.id_user
+                         WHERE c.no_pendaftaran = ?"
+                    );
+                    $cAmbil->bind_param("ss", $hashsalt, $originalNim);
+                    $cAmbil->execute();
+                    $dataBaru = $cAmbil->get_result()->fetch_assoc();
+                    $cAmbil->close();
+
+                    responseJSON([
+                        "message" => "Data calon mahasiswa berhasil diperbarui",
+                        "data"    => $dataBaru,
+                    ], 200);
+                    return;
+                }
+            }
+        }
         responseJSON(["error" => "Data mahasiswa dengan NIM '$originalNim' tidak ditemukan"], 404);
         return;
     }
@@ -359,7 +587,7 @@ function updateMahasiswa($conn, $urlId) {
     }
 
     $stmt->bind_param(
-        "sssissi",
+        "sssisss",
         $newNim,
         $namaLengkap,
         $programStudi,

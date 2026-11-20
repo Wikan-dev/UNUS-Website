@@ -52,7 +52,8 @@ export function useDashboardController(IDMahasiswa?: string) {
   const [modalConfig, setModalConfig] = useState<ModalConfig | null>(null);
 
   // Sinkronkan form dengan data mahasiswa
-  const syncFormWithStudent = useCallback((student: Mahasiswa) => {
+  const syncFormWithStudent = useCallback((student?: Mahasiswa | null) => {
+    if (!student) return;
     setFormData({
       nim: student.nim || '',
       nama_lengkap: student.nama_lengkap || '',
@@ -144,10 +145,16 @@ export function useDashboardController(IDMahasiswa?: string) {
 
     try {
       const updated = await updateMahasiswaDetail(mhs.nim, formData);
+      if (!updated || !updated.nim) {
+        throw new Error('Data mahasiswa tidak berhasil diperbarui.');
+      }
       setMhs(updated);
       syncFormWithStudent(updated);
       setIsEditing(false);
       setSuccessNotice('Semua perubahan data mahasiswa berhasil disimpan ke sistem!');
+
+      // Perbarui cache daftar seluruh mahasiswa agar dropdown & sidebar langsung tersinkron
+      fetchAllMahasiswa().then(setAllStudents).catch(() => {});
 
       // Jika NIM berubah, URL hash profil ikut berganti
       if (updated.hash_profil && updated.hash_profil !== IDMahasiswa) {

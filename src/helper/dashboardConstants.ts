@@ -22,8 +22,20 @@ export const STATUS_OPTIONS: StatusOption[] = [
   {
     value: 'Aktif',
     label: 'Aktif',
-    desc: 'Mahasiswa terdaftar aktif mengikuti kegiatan akademik perkuliahan & KRS.',
+    desc: 'Mahasiswa terdaftar aktif mengikuti kegiatan akademik perkuliahan & KRS (Resmi Ber-NIM).',
     badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+  },
+  {
+    value: 'Valid',
+    label: 'Valid (Belum Aktif)',
+    desc: 'Dokumen pendaftaran telah diverifikasi valid, namun belum diaktifkan menjadi mahasiswa resmi.',
+    badgeClass: 'bg-blue-100 text-blue-800 border-blue-300',
+  },
+  {
+    value: 'Menunggu Validasi',
+    label: 'Menunggu Validasi (Belum Aktif)',
+    desc: 'Pendaftaran baru, berkas dokumen masih dalam proses pemeriksaan panitia PMB.',
+    badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
   },
   {
     value: 'Cuti',
@@ -35,7 +47,7 @@ export const STATUS_OPTIONS: StatusOption[] = [
     value: 'Lulus',
     label: 'Lulus',
     desc: 'Mahasiswa telah menyelesaikan seluruh kurikulum dan yudisium.',
-    badgeClass: 'bg-blue-100 text-blue-800 border-blue-300',
+    badgeClass: 'bg-purple-100 text-purple-800 border-purple-300',
   },
   {
     value: 'DO',

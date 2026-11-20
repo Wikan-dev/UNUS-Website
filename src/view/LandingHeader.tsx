@@ -7,10 +7,7 @@ const menuItems = [
   { label: 'Beranda', href: '#beranda' },
   { label: 'Layanan', href: '#layanan' },
   { label: 'Program Studi', href: '#program-studi' },
-  { label: 'Akademik', href: '#akademik' },
-  { label: 'Penelitian', href: '#penelitian' },
-  { label: 'Tentang Kami', href: '#tentang' },
-  { label: 'Berita', href: '#berita' },
+  { label: 'Tentang', href: '#tentang' },
   { label: 'Kontak', href: '#kontak' },
 ]
 
